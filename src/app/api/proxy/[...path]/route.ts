@@ -1,31 +1,26 @@
+// src/app/api/proxy/[...path]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-const baseUrl = process.env.TARGET_API || 'https://api.pyramidsfreight.com/api';
+const baseUrl = process.env.TARGET_API || 'https://job.professionalacademyedu.com/api';
 
 async function proxyRequest(
   method: string,
   endpoint: string,
-  body?: Record<string, string | number>,
-  cookies?: string
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  body?: any,
+  contentType?: string,
+  request?: NextRequest
 ) {
   const url = `${baseUrl}/${endpoint}`;
   
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+  const headers: HeadersInit = {};
 
-  // Extract token from cookies and set it as Authorization header
-  if (cookies) {
-    const decodedCookies = decodeURIComponent(cookies);
-    const tokenMatch = decodedCookies.match(/token=([^;]+)/);
-    
-    if (tokenMatch) {
-      const token = tokenMatch[1];
-      // Set Authorization header instead of Cookie header
-      headers['Authorization'] = `Bearer ${token}`;
-      
-      console.log('Token found, setting Authorization header:', headers['Authorization']);
-    }
+  // استخراج التوكن من الكوكيز
+  const cookies = request?.headers.get('cookie') || '';
+  const tokenMatch = cookies.match(/token=([^;]+)/);
+  if (tokenMatch) {
+    const token = decodeURIComponent(tokenMatch[1]);
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   const fetchOptions: RequestInit = {
@@ -33,104 +28,183 @@ async function proxyRequest(
     headers,
   };
 
-  if (body && ['POST', 'PUT', 'PATCH','DELETE'].includes(method)) {
-    fetchOptions.body = JSON.stringify(body);
+  if (body) {
+    if (contentType?.includes('multipart/form-data')) {
+      // إذا كان FormData، أرسله كما هو
+      fetchOptions.body = body;
+      // لا تضف Content-Type header - سيتم تعيينه تلقائياً مع boundary
+    } else {
+      // إذا كان JSON
+      headers['Content-Type'] = 'application/json';
+      fetchOptions.body = JSON.stringify(body);
+    }
   }
 
+  console.log('🚀 Proxying request to:', url);
+  console.log('📋 Method:', method);
+  console.log('📦 Content-Type:', contentType);
+
   const response = await fetch(url, fetchOptions);
-  const contentType = response.headers.get('content-type') || '';
-  const isJson = contentType.includes('application/json');
+  
+  const responseContentType = response.headers.get('content-type') || '';
+  const isJson = responseContentType.includes('application/json');
   const data = isJson ? await response.json() : await response.text();
 
   return { response, data };
 }
 
+// POST - مع دعم FormData
+export async function POST(request: NextRequest) {
+  try {
+    const url = new URL(request.url);
+    const path = url.pathname.split('/api/proxy/')[1].split('/');
+    const endpoint = path.join('/');
+    
+    const contentType = request.headers.get('content-type') || '';
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any = undefined;
 
+    if (contentType.includes('multipart/form-data')) {
+      // إذا كان FormData (صورة)، أرسله مباشرة
+      body = await request.formData();
+      console.log('📸 FormData request with files');
+    } else if (contentType.includes('application/json')) {
+      // إذا كان JSON
+      try {
+        body = await request.json();
+        console.log('📥 JSON request body:', body);
+      } catch (parseError) {
+        console.error('❌ JSON parse error:', parseError);
+        return NextResponse.json(
+          { error: 'Invalid JSON in request body' },
+          { status: 400 }
+        );
+      }
+    }
 
-// PATCH
-export async function PATCH(request: NextRequest) {
-  const url = new URL(request.url);
-  const path = url.pathname.split('/api/proxy/')[1].split('/');
-  
-  const endpoint = path.join('/');
-  const body = await request.json();
-  const cookies = request.headers.get('cookie') || '';
+    const { response, data } = await proxyRequest('POST', endpoint, body, contentType, request);
 
-  const { response, data } = await proxyRequest('PATCH', endpoint, body, cookies);
-  return NextResponse.json(data, { status: response.status });
+    // معالجة تسجيل الدخول
+    const res = NextResponse.json(data, { status: response.status });
+    if (endpoint === 'login/admin' && response.ok && data && data.token) {
+      res.cookies.set({
+        name: 'token',
+        value: data.token,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+        path: '/',
+      });
+    }
+
+    return res;
+  } catch (error) {
+    console.error('❌ Proxy POST error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
 
-// GET
+// PUT - نفس التعديلات
+export async function PUT(request: NextRequest) {
+  try {
+    const url = new URL(request.url);
+    const path = url.pathname.split('/api/proxy/')[1].split('/');
+    const endpoint = path.join('/');
+    
+    const contentType = request.headers.get('content-type') || '';
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any = undefined;
+
+    if (contentType.includes('multipart/form-data')) {
+      body = await request.formData();
+      console.log('📸 FormData PUT request with files');
+    } else if (contentType.includes('application/json')) {
+      try {
+        body = await request.json();
+      } catch (parseError) {
+        return NextResponse.json(
+          { error: 'Invalid JSON in request body' },
+          { status: 400 }
+        );
+      }
+    }
+
+    const { response, data } = await proxyRequest('PUT', endpoint, body, contentType, request);
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    console.error('❌ Proxy PUT error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH - نفس التعديلات
+export async function PATCH(request: NextRequest) {
+  try {
+    const url = new URL(request.url);
+    const path = url.pathname.split('/api/proxy/')[1].split('/');
+    const endpoint = path.join('/');
+    
+    const contentType = request.headers.get('content-type') || '';
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any = undefined;
+
+    if (contentType.includes('multipart/form-data')) {
+      body = await request.formData();
+      console.log('📸 FormData PATCH request with files');
+    } else if (contentType.includes('application/json')) {
+      try {
+        body = await request.json();
+      } catch (parseError) {
+        return NextResponse.json(
+          { error: 'Invalid JSON in request body' },
+          { status: 400 }
+        );
+      }
+    }
+
+    const { response, data } = await proxyRequest('PATCH', endpoint, body, contentType, request);
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    console.error('❌ Proxy PATCH error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// GET و DELETE يبقوا كما هما
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const path = url.pathname.split('/api/proxy/')[1].split('/');
-  
   const endpoint = path.join('/');
-  const cookies = request.headers.get('cookie') || '';
 
-  const { response, data } = await proxyRequest('GET', endpoint, undefined, cookies);
+  const { response, data } = await proxyRequest('GET', endpoint, undefined, undefined, request);
   return NextResponse.json(data, { status: response.status });
 }
 
-// POST
-export async function POST(request: NextRequest) {
-  const url = new URL(request.url);
-  const path = url.pathname.split('/api/proxy/')[1].split('/');
-  
-  const endpoint = path.join('/');
-  const body = await request.json();
-  const cookies = request.headers.get('cookie') || '';
-
-  const { response, data } = await proxyRequest('POST', endpoint, body, cookies);
-
-  const res = NextResponse.json(data, { status: response.status });
-
-  if (endpoint === 'login' && response.ok && typeof data === 'object' && 'token' in data) {
-    console.log('Login Successful. Setting Token in Cookies:', data.token); 
-    res.cookies.set('token', data.token, {
-      httpOnly: true,
-      path: '/',
-      maxAge: 60 * 60 * 24, 
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    });
-  }
-
-  return res;
-}
-
-// PUT
-export async function PUT(request: NextRequest) {
-  const url = new URL(request.url);
-  const path = url.pathname.split('/api/proxy/')[1].split('/');
-  
-  const endpoint = path.join('/');
-  const body = await request.json();
-  const cookies = request.headers.get('cookie') || '';
-
-  const { response, data } = await proxyRequest('PUT', endpoint, body, cookies);
-  return NextResponse.json(data, { status: response.status });
-}
-
-// DELETE
 export async function DELETE(request: NextRequest) {
   const url = new URL(request.url);
   const path = url.pathname.split('/api/proxy/')[1].split('/');
-  
   const endpoint = path.join('/');
-  const cookies = request.headers.get('cookie') || '';
 
   let body = undefined;
   try {
-    body = await request.json();
-  } catch (err) {
-    console.log('No body in DELETE request (may be fine)');
+    const contentType = request.headers.get('content-type');
+    if (contentType?.includes('application/json')) {
+      body = await request.json();
+    }
+  } catch {
+    // No body - هذا طبيعي
   }
 
-  const { response, data } = await proxyRequest('DELETE', endpoint, body, cookies);
-
-  console.log('🗑️ DELETE Request to:', endpoint, 'Body:', body);
-  console.log('🧾 DELETE Response:', data);
-
+  const { response, data } = await proxyRequest('DELETE', endpoint, body, undefined, request);
   return NextResponse.json(data, { status: response.status });
 }

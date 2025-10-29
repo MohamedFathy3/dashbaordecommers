@@ -1,16 +1,15 @@
 'use client'
 
 import { 
-  Home, Database,
-  ChevronDown, ChevronRight, LucideIcon, ComputerIcon,
-  User as UserIcon
+  Home, Database, Computer, User,
+  ChevronDown, ChevronRight, LucideIcon,
+  Clock, Package, Megaphone
 } from "lucide-react"
 import { useAuth } from '@/contexts/AuthContext'
-
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '../lib/utils'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import '../styles/globals.css'
 
 type ChildItem = {
@@ -28,14 +27,12 @@ type NavItem = {
 }
 
 const navItems: NavItem[] = [
-  { name: 'Dashboard', icon: Home, href: '/' ,roles: ['admin','help_desk']  },
-  { name: 'MasterData', icon: Database, href: '/MasterData', roles: ['admin','help_desk'] },
-  { name: 'IT Module', icon: ComputerIcon, href: '/It_module',roles: ['admin','help_desk']  },
-  { name: 'Profile', icon: UserIcon, href: '/Profile', roles: ['admin','help_desk']  },
-  { name: 'employee', icon: UserIcon, href: '/employee', roles: ['employee']  },
-  { name: 'tickets', icon: ComputerIcon, href: '/employee/tickets', roles: ['employee']  },
-  { name: 'Profile', icon: UserIcon, href: '/Profile', roles: ['employee']  },
-
+  { name: 'Dashboard', icon: Home, href: '/' },
+  { name: 'orders', icon: Clock, href: '/orders' },
+  { name: 'category', icon: Computer, href: '/category' },
+  { name: 'Product', icon: Package, href: '/Product' },
+  { name: 'offer', icon: Database, href: '/offer' },
+  { name: 'conectUs', icon: Megaphone, href: '/conectUs' },
 ]
 
 export default function Sidebar({
@@ -50,6 +47,38 @@ export default function Sidebar({
   const { user } = useAuth()
   const pathname = usePathname()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [isDarkMode, setIsDarkMode] = useState(false)
+
+  // الكشف عن الوضع الداكن
+  useEffect(() => {
+    const checkDarkMode = () => {
+      if (typeof window !== 'undefined') {
+        // تحقق من class الـ html element أو من localStorage
+        const isDark = document.documentElement.classList.contains('dark') || 
+                      localStorage.theme === 'dark' ||
+                      (window.matchMedia('(prefers-color-scheme: dark)').matches && !localStorage.theme)
+        setIsDarkMode(isDark)
+      }
+    }
+
+    checkDarkMode()
+
+    // استمع للتغييرات في الوضع الداكن
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    mediaQuery.addEventListener('change', checkDarkMode)
+    
+    // استمع للتغييرات في class الـ html
+    const observer = new MutationObserver(checkDarkMode)
+    observer.observe(document.documentElement, { 
+      attributes: true, 
+      attributeFilter: ['class'] 
+    })
+
+    return () => {
+      mediaQuery.removeEventListener('change', checkDarkMode)
+      observer.disconnect()
+    }
+  }, [])
 
   const roles = user ? (Array.isArray(user.role) ? user.role : [user.role]) : []
 
@@ -85,12 +114,88 @@ export default function Sidebar({
           {/* Header */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
             {!collapsed ? (
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white transition-opacity duration-300">
-                ERP System
-              </h2>
+              <div className="flex items-center gap-3">
+                {/* Logo Image */}
+                <div className="w-10 h-10 flex items-center justify-center">
+                  {isDarkMode ? (
+                    // صورة الوضع الداكن - بدون خلفية
+                    <img 
+                      src="/logo.png" 
+                      alt="App Logo"
+                      className="w-13 h-13 object-contain"
+                      onError={(e) => {
+                        // Fallback إذا الصورة مش موجودة
+                        e.currentTarget.style.display = 'none'
+                        const fallback = document.getElementById('logo-fallback')
+                        if (fallback) fallback.style.display = 'flex'
+                      }}
+                    />
+                  ) : (
+                    // صورة الوضع الفاتح - بخلفية
+                    <img 
+                      src="/logo.png" 
+                      alt="App Logo"
+                      className="w-13 h-13 object-contain"
+                      onError={(e) => {
+                        // Fallback إذا الصورة مش موجودة
+                        e.currentTarget.style.display = 'none'
+                        const fallback = document.getElementById('logo-fallback')
+                        if (fallback) fallback.style.display = 'flex'
+                      }}
+                    />
+                  )}
+                  
+                  {/* Fallback إذا الصور مش موجودة */}
+                  <div 
+                    id="logo-fallback"
+                    className="w-13 h-13 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm hidden"
+                  >
+                    E
+                  </div>
+                </div>
+               <h2 className="text-3xl font-extrabold bg-gradient-to-r from-red-600 via-orange-500 to-yellow-400 bg-clip-text text-transparent">
+  forma
+</h2>
+
+              </div>
             ) : (
-              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
-                E
+              // Logo عندما الـ sidebar collapsed
+              <div className="w-13 h-13 flex items-center justify-center">
+                 {isDarkMode ? (
+                    // صورة الوضع الداكن - بدون خلفية
+                    <img 
+                      src="/logo.png" 
+                      alt="App Logo"
+                      className="w-13 h-13 object-contain"
+                      onError={(e) => {
+                        // Fallback إذا الصورة مش موجودة
+                        e.currentTarget.style.display = 'none'
+                        const fallback = document.getElementById('logo-fallback')
+                        if (fallback) fallback.style.display = 'flex'
+                      }}
+                    />
+                  ) : (
+                    // صورة الوضع الفاتح - بخلفية
+                    <img 
+                      src="/logo.png" 
+                      alt="App Logo"
+                      className="w-13 h-13 object-contain"
+                      onError={(e) => {
+                        // Fallback إذا الصورة مش موجودة
+                        e.currentTarget.style.display = 'none'
+                        const fallback = document.getElementById('logo-fallback')
+                        if (fallback) fallback.style.display = 'flex'
+                      }}
+                    />
+                  )}
+                
+                {/* Fallback عندما الـ sidebar collapsed */}
+                <div 
+                  id="logo-collapsed-fallback"
+                  className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs hidden"
+                >
+                  E
+                </div>
               </div>
             )}
           </div>
@@ -131,7 +236,7 @@ export default function Sidebar({
                           </span>
                         </Link>
 
-                        {/* زرار التوسيع */}
+                        {/* زر التوسيع */}
                         {!collapsed && (
                           <button
                             onClick={() => toggleDropdown(item.name)}
@@ -146,7 +251,7 @@ export default function Sidebar({
                         )}
                       </div>
 
-                      {/* Submenu */}
+                      {/* القائمة الفرعية */}
                       {isOpen && !collapsed && (
                         <ul className="ml-10 mt-1 space-y-1">
                           {item.children!.map((child) => (

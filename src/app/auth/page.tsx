@@ -14,7 +14,6 @@ const FiArrowRight = dynamic(() => import('react-icons/fi').then(mod => mod.FiAr
 export default function AuthPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [remember, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [, setError] = useState<string | null>(null)
 
@@ -27,33 +26,33 @@ export default function AuthPage() {
     setError(null)
 
     try {
-      const success = await login({ email, password, remember })
+      const success = await login({ email, password })
 
-      if (!success) {
-        console.log(success)
+      if (success) {
+        // تسجيل الدخول ناجح - التوجيه المباشر إلى الصفحة الرئيسية
+        toast.success('Login successful!')
+        router.push('/')
+      } else {
         toast.error('Login failed. Please check your credentials.')
         setError('Login failed. Please check your credentials.')
-      } 
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message)
+        toast.error(err.message)
       } else {
         setError('Something went wrong')
+        toast.error('Something went wrong')
       }
     } finally {
       setIsLoading(false)
     }
   }
 
+  // إذا كان المستخدم مسجل دخول بالفعل، يتم توجيهه مباشرة
   useEffect(() => {
-    if (user?.role) {
-      if (user.role === 'admin') {
-        router.push('/')
-      } else if (user.role === 'employee') {
-        router.push('/employee')
-      } else {
-        router.push('/')
-      }
+    if (user) {
+      router.push('/')
     }
   }, [user, router])
 
@@ -165,8 +164,8 @@ export default function AuthPage() {
           <div className="mx-auto w-20 h-20 rounded-full bg-indigo-600 bg-opacity-80 flex items-center justify-center mb-5 shadow-lg">
             <FiUser className="text-white text-3xl" />
           </div>
-          <h1 className="text-4xl font-extrabold text-white"> login</h1>
-          <p className="text-indigo-300 mt-2 text-sm"> login data email and password Please </p>
+          <h1 className="text-4xl font-extrabold text-white">Login</h1>
+          <p className="text-indigo-300 mt-2 text-sm">Enter your email and password to continue</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -175,7 +174,8 @@ export default function AuthPage() {
               htmlFor="email"
               className="block text-sm font-semibold text-indigo-300 mb-2"
             >
-email            </label>
+              Email
+            </label>
             <div className="relative">
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                 <FiMail className="text-indigo-400" />
@@ -199,7 +199,7 @@ email            </label>
               htmlFor="password"
               className="block text-sm font-semibold text-indigo-300 mb-2"
             >
-password
+              Password
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -217,32 +217,6 @@ password
               />
             </div>
           </div>
-
-        <div className="flex items-center justify-between text-indigo-300 text-sm">
-  <label htmlFor="rememberMe" className="flex items-center cursor-pointer select-none">
-    <div className="relative">
-      <input
-        type="checkbox"
-        id="rememberMe"
-        checked={remember}
-        onChange={(e) => setRememberMe(e.target.checked)}
-        className="sr-only"
-      />
-      <div
-        className={`w-11 h-6 rounded-full shadow-inner transition-colors duration-300 ${
-          remember ? 'bg-indigo-500' : 'bg-gray-500/50'
-        }`}
-      ></div>
-      <div
-        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${
-          remember ? 'translate-x-5' : ''
-        }`}
-      ></div>
-    </div>
-    <span className="mr-3">Remember me</span>
-  </label>
-</div>
-
 
           <button
             type="submit"
@@ -273,23 +247,20 @@ password
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                 loading...
+                Loading...
               </>
             ) : (
               <>
-                 login
+                Login
                 <FiArrowRight className="mr-2" />
               </>
             )}
           </button>
         </form>
 
-    
-
-      
         <div className="mt-10 pt-6 border-t border-indigo-700 text-center">
           <p className="text-xs text-indigo-500 select-none">
-            © {new Date().getFullYear()}pyramids
+            © {new Date().getFullYear()} Pyramids
           </p>
         </div>
       </div>

@@ -8,14 +8,14 @@ import { AuthProvider } from "../contexts/AuthContext";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
 
   // بيانات الشركة - يمكن جلبها من environment variables أو config
   const companyInfo = {
-    name: process.env.NEXT_PUBLIC_COMPANY_NAME || "Pyramids Freight Services",
-    website: process.env.NEXT_PUBLIC_COMPANY_WEBSITE || "wsa-elite.com/",
+    name: process.env.NEXT_PUBLIC_COMPANY_NAME || "jobs",
+    website: process.env.NEXT_PUBLIC_COMPANY_WEBSITE || "/",
     year: new Date().getFullYear()
   };
 

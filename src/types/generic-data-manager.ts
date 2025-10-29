@@ -87,6 +87,8 @@ export interface GenericDataManagerProps {
   showFilter?: boolean;
   showBulkActions?: boolean;
   showDeletedToggle?: boolean;
+   initialPerPage?: number
+  
 }
 
 export interface ColumnDefinition {
@@ -127,7 +129,7 @@ export interface ImageData {
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'select' | 'email' | 'password' | 'date' | 'image' | 'switch' | 'textarea' | 'file' | 'tel' | 'url'|'checkbox';
+  type: 'text' | 'number' | 'select' | 'email' | 'password' | 'date'| 'custom' |'datetime-local' |'custom-time' | 'time' | 'image' | 'switch' | 'textarea' | 'file' | 'tel' | 'url' | 'checkbox';
   required?: boolean;
   options?: { value: string | number; label: string }[];
   optionsKey?: string;
@@ -137,6 +139,7 @@ export interface FormField {
   accept?: string;
   placeholder?: string;
   rows?: number;
+  component?: 'checkbox-group' | 'time-selector'; 
 }
 
 export interface MutationResult {
@@ -171,15 +174,17 @@ export interface GenericDataManagerState {
   setSelectedItems: React.Dispatch<React.SetStateAction<Set<number>>>;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setFormData: React.Dispatch<React.SetStateAction<Record<string, any>>>;
+  setPerPage: (perPage: number) => void;
 }
 
-export type SaveOptions = FormEvent<HTMLFormElement> | { keepOpen?: boolean };
+export type SaveOptions = 
+  | { keepOpen?: boolean }
+  | FormEvent;
 
-// عدل تعريف الـ saveItemMutation
-export interface SaveMutationVariables {
-  data: Entity | FormData;
-  isFormData?: boolean;
-}
+// دالة مساعدة محسنة للتحقق من النوع
+export const isFormEvent = (e: SaveOptions): e is FormEvent => {
+  return !!(e as FormEvent)?.preventDefault;
+};
 
 export interface GenericDataManagerHandlers {
   handleSave: (e: SaveOptions) => Promise<void>;
@@ -196,6 +201,10 @@ export interface GenericDataManagerHandlers {
   handleRestore: (id: number, itemName: string) => void;
   handleForceDelete: (id: number, itemName: string) => void;
   handleToggleActive?: (id: number, itemName: string, currentActive: boolean) => void;
+  handleToggleDeleted: () => void;
+
+    handleForceDeleteSelected: () => void;
+
 }
 
 export interface FormFieldProps {
@@ -209,6 +218,7 @@ export interface FormFieldProps {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formData?: Record<string, any>;
   compact?: boolean;
+  
 }
 
 export interface FormModalProps {
@@ -274,6 +284,8 @@ export interface HeaderProps {
   showActiveToggle?: boolean;
   showBulkActions?: boolean;
   showDeletedToggle?: boolean;
+    onForceDeleteSelected?: () => void;
+
 }
 
 export interface SearchBarProps {
@@ -303,6 +315,9 @@ export interface DataTableProps {
   orderBy: string;
   orderByDirection: 'asc' | 'desc';
   pagination: PaginationMeta;
+  onPerPageChange?: (perPage: number) => void;
+      perPage?: number; // إضافة
+
   onToggleSelectAll: () => void;
   onToggleSelectItem: (id: number) => void;
   onSort: (column: ColumnDefinition) => void;
