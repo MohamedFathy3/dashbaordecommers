@@ -18,6 +18,14 @@ export interface MultiImageUploaderProps {
   compact?: boolean;
 }
 
+interface PreviewItem {
+  url: string;
+  type: 'existing' | 'new';
+  name: string;
+  id?: string;
+  originalIndex: number; // ✅ إضافة originalIndex
+}
+
 export const MultiImageUploader: React.FC<MultiImageUploaderProps> = ({
   value,
   onChange,
@@ -38,59 +46,58 @@ export const MultiImageUploader: React.FC<MultiImageUploaderProps> = ({
     };
   }, [value]);
   
-  const [previewUrls, setPreviewUrls] = useState<{url: string, type: 'existing' | 'new', name: string, id?: string}[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<PreviewItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ✅ توليد الـ previews
-// في useEffect الخاص بـ previewUrls - إضافة معلومات أكثر
-useEffect(() => {
-  const newPreviewUrls: {url: string, type: 'existing' | 'new', name: string, id?: string, originalIndex?: number}[] = [];
+  // ✅ توليد الـ previews مع originalIndex
+  useEffect(() => {
+    const newPreviewUrls: PreviewItem[] = [];
 
-  // الصور القديمة (URLs)
-  safeValue.existing.forEach((url, index) => {
-    if (url && typeof url === 'string') {
-      newPreviewUrls.push({
-        url: url,
-        type: 'existing',
-        name: `Existing Image ${index + 1}`,
-        id: `existing-${index}`,
-        originalIndex: index // ✅ إضافة الفهرس الأصلي
-      });
-    }
-  });
-
-  // الصور الجديدة (Files)
-  safeValue.new.forEach((file, index) => {
-    if (file instanceof File) {
-      newPreviewUrls.push({
-        url: URL.createObjectURL(file),
-        type: 'new',
-        name: file.name,
-        id: `new-${index}`,
-        originalIndex: index // ✅ إضافة الفهرس الأصلي
-      });
-    }
-  });
-
-  console.log('🖼️ Generated preview URLs:', newPreviewUrls.map(p => ({
-    type: p.type,
-    name: p.name,
-    originalIndex: p.originalIndex
-  })));
-
-  setPreviewUrls(newPreviewUrls);
-
-  // تنظيف الذاكرة
-  return () => {
-    newPreviewUrls.forEach(item => {
-      if (item.type === 'new') {
-        URL.revokeObjectURL(item.url);
+    // الصور القديمة (URLs)
+    safeValue.existing.forEach((url, originalIndex) => {
+      if (url && typeof url === 'string') {
+        newPreviewUrls.push({
+          url: url,
+          type: 'existing',
+          name: `Existing Image ${originalIndex + 1}`,
+          id: `existing-${originalIndex}`,
+          originalIndex: originalIndex // ✅ إضافة الفهرس الأصلي
+        });
       }
     });
-  };
-}, [safeValue.existing, safeValue.new]);
+
+    // الصور الجديدة (Files)
+    safeValue.new.forEach((file, originalIndex) => {
+      if (file instanceof File) {
+        newPreviewUrls.push({
+          url: URL.createObjectURL(file),
+          type: 'new',
+          name: file.name,
+          id: `new-${originalIndex}`,
+          originalIndex: originalIndex // ✅ إضافة الفهرس الأصلي
+        });
+      }
+    });
+
+    console.log('🖼️ Generated preview URLs:', newPreviewUrls.map(p => ({
+      type: p.type,
+      name: p.name,
+      originalIndex: p.originalIndex
+    })));
+
+    setPreviewUrls(newPreviewUrls);
+
+    // تنظيف الذاكرة
+    return () => {
+      newPreviewUrls.forEach(item => {
+        if (item.type === 'new') {
+          URL.revokeObjectURL(item.url);
+        }
+      });
+    };
+  }, [safeValue.existing, safeValue.new]);
 
   // ✅ تحقق من الملف
   const validateFile = (file: File): { isValid: boolean; error?: string } => {
@@ -145,8 +152,8 @@ useEffect(() => {
 
     if (validFiles.length > 0) {
       const updatedValue = {
-        existing: [...safeValue.existing], // الحفاظ على الصور القديمة
-        new: [...safeValue.new, ...validFiles] // إضافة الجديدة
+        existing: [...safeValue.existing],
+        new: [...safeValue.new, ...validFiles]
       };
       onChange(updatedValue);
     }
@@ -174,41 +181,47 @@ useEffect(() => {
     fileInputRef.current?.click();
   };
 
-const handleRemove = (index: number) => {
-  const item = previewUrls[index];
-  
-  if (!item) return;
+  // ✅ الإصلاح النهائي لـ handleRemove
+  const handleRemove = (index: number) => {
+    const item = previewUrls[index];
+    
+    if (!item) return;
 
-  console.log('🗑️ Removing item:', item, 'at index:', index);
+    console.log('🗑️ Removing item:', {
+      type: item.type,
+      name: item.name,
+      previewIndex: index,
+      originalIndex: item.originalIndex
+    });
 
-  if (item.type === 'existing') {
-    // ✅ إصلاح: إزالة من الصور القديمة بناء على الفهرس الصحيح
-    const updatedExisting = safeValue.existing.filter((_, i) => i !== index);
-    
-    onChange({
-      existing: updatedExisting,
-      new: safeValue.new
-    });
-    console.log('✅ Removed existing image at index:', index);
-    console.log('📊 Remaining existing images:', updatedExisting.length);
-    
-  } else {
-    // ✅ إصلاح: إزالة من الصور الجديدة بناء على الفهرس الصحيح
-    // حساب الفهرس الصحيح في مصفوفة new (بعد طرح عدد الصور القديمة)
-    const newIndex = index - safeValue.existing.length;
-    const updatedNew = safeValue.new.filter((_, i) => i !== newIndex);
-    
-    // تنظيف الـ URL
-    URL.revokeObjectURL(item.url);
-    
-    onChange({
-      existing: safeValue.existing,
-      new: updatedNew
-    });
-    console.log('✅ Removed new file at new index:', newIndex);
-    console.log('📊 Remaining new files:', updatedNew.length);
-  }
-};
+    if (item.type === 'existing') {
+      // ✅ استخدم originalIndex لإزالة من existing array
+      const updatedExisting = safeValue.existing.filter((_, i) => i !== item.originalIndex);
+      
+      const newValue = {
+        existing: updatedExisting,
+        new: safeValue.new
+      };
+      
+      console.log('✅ Removed existing image, new value:', newValue);
+      onChange(newValue);
+      
+    } else {
+      // ✅ استخدم originalIndex لإزالة من new array
+      const updatedNew = safeValue.new.filter((_, i) => i !== item.originalIndex);
+      
+      // تنظيف الـ URL
+      URL.revokeObjectURL(item.url);
+      
+      const newValue = {
+        existing: safeValue.existing,
+        new: updatedNew
+      };
+      
+      console.log('✅ Removed new file, new value:', newValue);
+      onChange(newValue);
+    }
+  };
 
   const handleRemoveAll = () => {
     // تنظيف الـ URLs للـ new files فقط
@@ -218,10 +231,12 @@ const handleRemove = (index: number) => {
       }
     });
     
-    onChange({
+    const resetValue = {
       existing: [],
       new: []
-    });
+    };
+    
+    onChange(resetValue);
     
     setError(null);
     
@@ -310,7 +325,7 @@ const handleRemove = (index: number) => {
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik00MCAyNEM0My4zMTM3IDI0IDQ2IDI2LjY4NjMgNDYgMzBDNDYgMzMuMzEzNyA0My4zMTM3IDM2IDQwIDM2QzM2LjY4NjMgMzYgMzQgMzMuMzEzNyAzNCAzMEMzNCAyNi42ODYzIDM2LjY4NjMgMjQgNDAgMjRaIiBmaWxsPSIjOEU5MEEwIi8+CjxwYXRoIGQ9Ik0xNiA1NkMxNiA1Mi42ODYzIDE4LjY4NjMgNTAgMjIgNTBINTguMDAwMUM2MS4zMTM4IDUwIDY0IDUyLjY4NjMgNjQgNTZWNjRIMTZWNjRWNThWNTZaIiBmaWxsPSIjOEU5MEEwIi8+Cjwvc3ZnPgo=`;
+                          target.src = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik00MCAyNEM0My4zMTM3IDI0IDQ2IDI2LjY4NjMgNDYgMzBDNDYgMzMuMzEzNyA0My4zMTM3IDM2IDQwIDM2QzM2LjY4NjMgMzYgMzQgMzMuMzEzNyAzNCAzMEMzNCAyNi42ODYzIDM2LjY4NjMgMjQgNDAgMjRaIiBmaWxsPSIjOEU5MEEwIi8+CjxwYXRoIGQ9Ik0xNiA1NkMxNiA1Mi42ODYzIDE4LjY4NjMgNTAgMjIgNTBINTguMDAwMUM2MS4zMTM4IDUwIDY0IDUyLjY4NjMgNjQgNTZWNjRIMTZWNjRWNjhWNTZaIiBmaWxsPSIjOEU5MEEwIi8+Cjwvc3ZnPgo=`;
                         }}
                       />
                     </div>

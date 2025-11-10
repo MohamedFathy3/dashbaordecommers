@@ -451,7 +451,7 @@ export function useGenericDataManager({
 
 
 const handleSave = async (e: SaveOptions): Promise<void> => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let itemData: Record<string, any> = {};
   let keepOpen = false;
   let hasFiles = false;
@@ -487,60 +487,71 @@ const handleSave = async (e: SaveOptions): Promise<void> => {
 
   let dataToSend: Entity | FormData;
   let isFormData = false;
+  const isEditMode = !!editingItem?.id;
 
-  if (hasFiles) {
+  if (hasFiles || isEditMode) { // ✅ تغيير مهم: استخدم isEditMode حتى لو لا يوجد ملفات
     const formDataObj = new FormData();
     
-    // ✅ إضافة image وهمية لتخطي الفاليديشن
-    const dummyImage = new File([''], 'dummy.png', { type: 'image/png' });
-    formDataObj.append('image', dummyImage);
-    console.log('🔄 Added dummy image to bypass validation');
-    
     Object.entries(itemData).forEach(([key, value]) => {
-      // ✅ الإصلاح الجذري: معالجة gallery بنفس الطريقة في Add و Edit
-      if (key === 'gallery') {
-        console.log('🖼️ Processing gallery field:', value);
+      // ✅ الإصلاح: التعامل مع image في وضع التعديل
+      if (key === 'image') {
+        console.log('🖼️ Processing image field:', value);
         
-        let allGalleryFiles: File[] = [];
-        
-        // استخراج كل الملفات بغض النظر عن الهيكل
-        if (Array.isArray(value)) {
-          // حالة Add: gallery كمصفوفة ملفات
-          allGalleryFiles = value.filter(item => item instanceof File);
-        } else if (value && typeof value === 'object' && 'new' in value) {
-          // حالة Edit: gallery ككائن فيه new و existing
-          const galleryValue = value as { existing: string[]; new: File[] };
-          
-          // ❌ تجاهل completely الصور القديمة (existing)
-          // ✅ نأخذ الملفات الجديدة فقط
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          allGalleryFiles = galleryValue.new.filter((item: any) => item instanceof File);
-          
-          console.log('🔵 EDIT MODE - Ignoring existing gallery, sending only new files:', allGalleryFiles.length);
+        if (value instanceof File) {
+          // الحالة 1: ملف جديد
+          console.log(`📄 Adding new image file:`, value.name);
+          formDataObj.append('image', value);
+        } else if (isEditMode && typeof value === 'string' && value.startsWith('http')) {
+          // الحالة 2: في التعديل والصورة موجودة كـ URL
+          console.log('🔗 EDIT MODE - Image is URL, sending as empty to preserve existing image');
+          formDataObj.append('image', ''); // ✅ أرسل قيمة فارغة
+        } else if (!value || value === '') {
+          // الحالة 3: صورة فارغة
+          console.log('🔄 Image is empty, sending empty string');
+          formDataObj.append('image', '');
         }
         
-        // إرسال كل الملفات في gallery[] فقط (زي الـ Add)
-        allGalleryFiles.forEach((file: File, index: number) => {
-          console.log(`📁 Adding gallery file [${index}]:`, file.name);
-          formDataObj.append(`gallery[${index}]`, file);
-        });
+      } else if (key === 'gallery') {
+        console.log('🖼️ Processing gallery field:', value);
+        
+        if (value && typeof value === 'object') {
+          const galleryValue = value as { existing: string[]; new: File[] };
+          
+          let allGalleryFiles: File[] = [];
+          
+          if (Array.isArray(value)) {
+            allGalleryFiles = value.filter(item => item instanceof File);
+          } else if (value && typeof value === 'object' && 'new' in value) {
+            const galleryValue = value as { existing: string[]; new: File[] };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            allGalleryFiles = galleryValue.new.filter((item: any) => item instanceof File);
+            console.log('🔵 EDIT MODE - Sending only new gallery files:', allGalleryFiles.length);
+          }
+          
+          allGalleryFiles.forEach((file: File, index: number) => {
+            console.log(`📁 Adding gallery file [${index}]:`, file.name);
+            formDataObj.append(`gallery[${index}]`, file);
+          });
+        }
         
       } else if (value instanceof File) {
-        // ✅ معالجة ملفات عادية
         console.log(`📄 Adding file ${key}:`, value.name);
         formDataObj.append(key, value);
       } else if (value !== null && value !== undefined && value !== '') {
-        // ✅ معالجة القيم النصية
         formDataObj.append(key, String(value));
       }
     });
     
+    // ✅ تأكد من إضافة image إذا كانت مفقودة في التعديل
+    if (isEditMode && !formDataObj.has('image')) {
+      console.log('⚠️ EDIT MODE - No image field found, adding empty image');
+      formDataObj.append('image', '');
+    }
+    
     // إضافة _method إذا كان تعديل
-    if (editingItem?.id) {
+    if (isEditMode) {
       formDataObj.append('_method', 'PUT');
       console.log('✏️ EDIT MODE - Added _method: PUT');
-    } else {
-      console.log('🆕 ADD MODE - No _method needed');
     }
     
     // Log FormData للتأكد
@@ -552,7 +563,7 @@ const handleSave = async (e: SaveOptions): Promise<void> => {
     dataToSend = formDataObj;
     isFormData = true;
   } else {
-    // ✅ معالجة البيانات بدون ملفات
+    // معالجة البيانات بدون ملفات (لـ Add فقط)
     const clean: Record<string, unknown> = {};
     Object.entries(itemData).forEach(([key, value]) => {
       if (value !== null && value !== undefined && value !== '') {
@@ -561,6 +572,10 @@ const handleSave = async (e: SaveOptions): Promise<void> => {
     });
     dataToSend = clean as Entity;
   }
+
+  console.log('🎯 Final data to send:', dataToSend);
+  console.log('📦 Is FormData:', isFormData);
+  console.log('🔄 Keep open:', keepOpen);
 
   saveItemMutation.mutate({ 
     data: dataToSend, 

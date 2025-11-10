@@ -256,14 +256,7 @@ export default function ProductsPage() {
           required: false,
           placeholder: 'Enter mix gun'
         },
-        { 
-  name: 'image', 
-  label: 'Main Image (Dummy)', 
-  type: 'file', 
-  required: false,
-  // يمكنك إخفاء الحقل إذا ماكنتش عايزه يظهر
-  // hidden: true
-},
+      
         { 
           name: 'mix_canules', 
           label: 'Mix Canules', 

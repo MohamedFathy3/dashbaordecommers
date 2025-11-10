@@ -106,41 +106,41 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
   }
 
   // ✅ معالجة MultiImageUploader - الإصلاح الكامل
-  if (field.type === "custom" && field.component === MultiImageUploader) {
-    console.log('🎯 MULTI IMAGE UPLOADER FIELD TRIGGERED!', field);
+// الإصلاح في FormFieldComponent
+if (field.type === "custom" && field.component === MultiImageUploader) {
+  console.log('🎯 MULTI IMAGE UPLOADER FIELD TRIGGERED!', field);
+  
+  const handleGalleryChange = (newValue: { existing: string[]; new: File[] }) => {
+    console.log('🔄 Gallery changed - FULL VALUE:', newValue);
     
-    const handleGalleryChange = (newValue: { existing: string[]; new: File[] }) => {
-      console.log('🔄 Gallery changed - FULL VALUE:', newValue);
-      
-      // ✅ الإصلاح: في التعديل والإضافة، نرسل الملفات الجديدة فقط كمصفوفة
-      // علشان الباك يستقبل gallery[] في الحالتين
-      if (isEditing) {
-        console.log('✏️ EDIT MODE - Sending only new files as array');
-        onChange(newValue.new); // إرسال الملفات الجديدة فقط كمصفوفة
-      } else {
-        console.log('🆕 ADD MODE - Sending only new files as array');
-        onChange(newValue.new); // إرسال الملفات الجديدة فقط كمصفوفة
-      }
-    };
+    // ✅ الإصلاح: إرسال القيمة الكاملة وليس فقط الملفات الجديدة
+    if (isEditing) {
+      console.log('✏️ EDIT MODE - Sending full gallery value');
+      onChange(newValue); // إرسال الكائن الكامل
+    } else {
+      console.log('🆕 ADD MODE - Sending full gallery value');
+      onChange(newValue); // إرسال الكائن الكامل
+    }
+  };
 
-    return (
-      <div className={`space-y-2 ${compact ? 'col-span-2' : 'col-span-1'}`}>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          {field.label}
-          {field.required && <span className="text-red-500 ml-1">*</span>}
-        </label>
-        <MultiImageUploader
-          value={normalizedValue}
-          onChange={handleGalleryChange}
-          label={field.label}
-          required={field.required}
-          accept={field.props?.accept || "image/jpeg, image/png, image/jpg, image/gif, image/webp"}
-          maxFiles={field.props?.maxFiles || 10}
-          compact={compact}
-        />
-      </div>
-    );
-  }
+  return (
+    <div className={`space-y-2 ${compact ? 'col-span-2' : 'col-span-1'}`}>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        {field.label}
+        {field.required && <span className="text-red-500 ml-1">*</span>}
+      </label>
+      <MultiImageUploader
+        value={normalizedValue}
+        onChange={handleGalleryChange}
+        label={field.label}
+        required={field.required}
+        accept={field.props?.accept || "image/jpeg, image/png, image/jpg, image/gif, image/webp"}
+        maxFiles={field.props?.maxFiles || 10}
+        compact={compact}
+      />
+    </div>
+  );
+}
 
   // ✅ معالجة ImageUploader
   if (field.type === "custom" && field.component === ImageUploader) {
