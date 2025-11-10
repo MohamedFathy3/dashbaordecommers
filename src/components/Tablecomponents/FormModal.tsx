@@ -1,484 +1,363 @@
-// // components/SmartFormModal.tsx
-// "use client";
+// components/Tablecomponents/FormModal.tsx
+"use client";
 
-// import React, { useState } from 'react';
-// import { Button } from "@/components/ui/button";
-// import { FormFieldComponent } from './FormFieldComponent';
-// import { FormModalProps, FormField } from "@/types/generic-data-manager";
+import { useState, useEffect } from "react";
+import { FormFieldComponent } from "@/components/Tablecomponents/formmodelcommpoinnet";
+import { Button } from "@/components/ui/button";
 
-// type ModalType = 'simple' | 'tabs' | 'steps' | 'profile';
+interface FormModalProps {
+  title: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  editingItem?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  formFields?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  formData: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  additionalQueries?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onFormDataChange: (data: any) => void;
+  onSave: (options: { keepOpen: boolean }) => void;
+  onClose: () => void;
+  saveLoading: boolean;
+  compactLayout?: boolean;
+}
 
-// const SmartFormModal: React.FC<FormModalProps & { 
-//   compactLayout?: boolean;
-//   defaultModalType?: ModalType;
-// }> = ({
-//   title, editingItem, formFields, formData, additionalQueries,
-//   onFormDataChange, onSave, onClose, saveLoading,
-//   compactLayout = false,
-//   defaultModalType = 'simple'
-// }) => {
-//   const [activeTab, setActiveTab] = useState('basic');
-//   const [currentStep, setCurrentStep] = useState(1);
-//   const [selectedModalType, setSelectedModalType] = useState<ModalType>(defaultModalType);
+const FormModal: React.FC<FormModalProps> = ({
+  title, 
+  editingItem, 
+  formFields = [],
+  formData, 
+  additionalQueries,
+  onFormDataChange, 
+  onSave, 
+  onClose, 
+  saveLoading,
+  compactLayout = false
+}) => {
+  const [activeTab, setActiveTab] = useState<string>('basic');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [localFormData, setLocalFormData] = useState<Record<string, any>>({});
+  const [isInitialized, setIsInitialized] = useState(false);
 
-//   // تصنيف الحقول تلقائياً
-//   const categorizeFields = () => {
-//     const categories: { [key: string]: FormField[] } = {
-//       basic: [],
-//       personal: [],
-//       security: [],
-//       media: [],
-//       other: []
-//     };
+  // ✅ استخدام formFields آمن
+  const safeFormFields = Array.isArray(formFields) ? formFields : [];
 
-//     formFields.forEach(field => {
-//       if (field.type === 'image' || field.type === 'avatar' || field.type === 'logo' || field.type === 'file') {
-//         categories.media.push(field);
-//       } else if (field.type === 'password' || field.name.includes('password')) {
-//         categories.security.push(field);
-//       } else if (field.name.includes('name') || field.name.includes('email') || field.name.includes('phone')) {
-//         categories.basic.push(field);
-//       } else if (field.name.includes('address') || field.name.includes('birth') || field.name.includes('gender')) {
-//         categories.personal.push(field);
-//       } else {
-//         categories.other.push(field);
-//       }
-//     });
-
-//     // إزالة الفئات الفارغة
-//     Object.keys(categories).forEach(key => {
-//       if (categories[key].length === 0) {
-//         delete categories[key];
-//       }
-//     });
-
-//     return categories;
-//   };
-
-//   const categorizedFields = categorizeFields();
-
-//   // دالة للحفظ والإستمرار
-//   const handleSaveAndContinue = async (e: React.FormEvent) => {
-//     e.preventDefault();
-//     await onSave(e, false);
-//   };
-
-//   // دالة للحفظ والإغلاق
-//   const handleSaveAndClose = async (e: React.FormEvent) => {
-//     e.preventDefault();
-//     await onSave(e, true);
-//   };
-
-//   // مكون أزرار الحفظ المشتركة
-//   const renderSaveButtons = () => (
-//     <div className="flex flex-col gap-3 mt-6">
-//       <div className="flex gap-3">
-//         <Button
-//           type="button"
-//           onClick={handleSaveAndContinue}
-//           className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white transition-all rounded-xl font-semibold py-3 shadow-lg hover:shadow-xl group"
-//           disabled={saveLoading}
-//         >
-//           {saveLoading ? (
-//             <span className="flex items-center gap-2">
-//               <i className="fas fa-spinner fa-spin"></i>
-//               Saving...
-//             </span>
-//           ) : (
-//             <span className="flex items-center gap-2">
-//               <div className="bg-white/20 p-1 rounded-lg group-hover:scale-110 transition-transform">
-//                 <i className="fas fa-save text-sm"></i>
-//               </div>
-//               Save & Continue
-//             </span>
-//           )}
-//         </Button>
-
-//         <Button
-//           type="button"
-//           onClick={handleSaveAndClose}
-//           className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white transition-all rounded-xl font-semibold py-3 shadow-lg hover:shadow-xl group"
-//           disabled={saveLoading}
-//         >
-//           {saveLoading ? (
-//             <span className="flex items-center gap-2">
-//               <i className="fas fa-spinner fa-spin"></i>
-//               Saving...
-//             </span>
-//           ) : (
-//             <span className="flex items-center gap-2">
-//               <div className="bg-white/20 p-1 rounded-lg group-hover:scale-110 transition-transform">
-//                 <i className="fas fa-check text-sm"></i>
-//               </div>
-//               {editingItem ? 'Update' : 'Save'}
-//             </span>
-//           )}
-//         </Button>
-//       </div>
-
-//       <Button
-//         type="button"
-//         onClick={onClose}
-//         variant="outline"
-//         className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 transition-all rounded-xl py-3 font-medium group"
-//       >
-//         <span className="flex items-center gap-2">
-//           <div className="bg-gray-200 dark:bg-gray-700 p-1 rounded-lg group-hover:scale-110 transition-transform">
-//             <i className="fas fa-times text-gray-600 dark:text-gray-400 text-sm"></i>
-//           </div>
-//           Cancel
-//         </span>
-//       </Button>
-//     </div>
-//   );
-
-//   // مكون إختيار طريقة العرض
-//   const renderViewSelector = () => (
-//     <div className="flex gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl mb-4">
-//       <button
-//         onClick={() => setSelectedModalType('simple')}
-//         className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-//           selectedModalType === 'simple'
-//             ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-//             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-//         }`}
-//       >
-//         <i className="fas fa-list mr-2"></i>
-//         Simple
-//       </button>
-//       <button
-//         onClick={() => setSelectedModalType('tabs')}
-//         className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-//           selectedModalType === 'tabs'
-//             ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-//             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-//         }`}
-//       >
-//         <i className="fas fa-folder mr-2"></i>
-//         Tabs
-//       </button>
-//       <button
-//         onClick={() => setSelectedModalType('steps')}
-//         className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-//           selectedModalType === 'steps'
-//             ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-//             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-//         }`}
-//       >
-//         <i className="fas fa-footsteps mr-2"></i>
-//         Steps
-//       </button>
-//       <button
-//         onClick={() => setSelectedModalType('profile')}
-//         className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-//           selectedModalType === 'profile'
-//             ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-//             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-//         }`}
-//       >
-//         <i className="fas fa-user-circle mr-2"></i>
-//         Profile
-//       </button>
-//     </div>
-//   );
-
-//   // 1. الموديل البسيط
-//   const renderSimpleModal = () => (
-//     <div className="space-y-4">
-//       {formFields.map((field) => (
-//         <FormFieldComponent
-//           key={field.name}
-//           field={field}
-//           value={formData[field.name] || ""}
-//           onChange={(value: any) => onFormDataChange({ ...formData, [field.name]: value })}
-//           additionalQueries={additionalQueries}
-//           formData={formData}
-//           compact={compactLayout}
-//         />
-//       ))}
-//       {renderSaveButtons()}
-//     </div>
-//   );
-
-//   // 2. موديل التبويبات
-//   const renderTabsModal = () => {
-//     const tabLabels: { [key: string]: string } = {
-//       basic: 'Basic Info',
-//       personal: 'Personal Info',
-//       security: 'Security',
-//       media: 'Media',
-//       other: 'Additional'
-//     };
-
-//     const tabIcons: { [key: string]: string } = {
-//       basic: 'fa-user',
-//       personal: 'fa-address-card',
-//       security: 'fa-shield-alt',
-//       media: 'fa-images',
-//       other: 'fa-ellipsis-h'
-//     };
-
-//     return (
-//       <div className="space-y-4">
-//         {/* التبويبات */}
-//         <div className="border-b border-gray-200 dark:border-gray-600">
-//           <div className="flex gap-1 overflow-x-auto">
-//             {Object.keys(categorizedFields).map(category => (
-//               <button
-//                 key={category}
-//                 onClick={() => setActiveTab(category)}
-//                 className={`flex items-center gap-2 px-4 py-3 font-medium text-sm rounded-t-lg transition-all whitespace-nowrap ${
-//                   activeTab === category
-//                     ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border-b-2 border-indigo-500'
-//                     : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-//                 }`}
-//               >
-//                 <i className={`fas ${tabIcons[category] || 'fa-circle'} text-xs`}></i>
-//                 {tabLabels[category] || category}
-//               </button>
-//             ))}
-//           </div>
-//         </div>
-
-//         {/* محتوى التبويب النشط */}
-//         <div className="min-h-[300px] animate-fade-in">
-//           <div className="grid gap-4">
-//             {categorizedFields[activeTab]?.map((field) => (
-//               <FormFieldComponent
-//                 key={field.name}
-//                 field={field}
-//                 value={formData[field.name] || ""}
-//                 onChange={(value: any) => onFormDataChange({ ...formData, [field.name]: value })}
-//                 additionalQueries={additionalQueries}
-//                 formData={formData}
-//                 compact={false}
-//               />
-//             ))}
-//           </div>
-//         </div>
-
-//         {renderSaveButtons()}
-//       </div>
-//     );
-//   };
-
-//   // 3. موديل الخطوات
-//   const renderStepsModal = () => {
-//     const steps = Object.keys(categorizedFields);
-//     const stepLabels: { [key: string]: string } = {
-//       basic: 'Basic Information',
-//       personal: 'Personal Details',
-//       security: 'Security Settings',
-//       media: 'Media Upload',
-//       other: 'Additional Info'
-//     };
-
-//     const stepIcons: { [key: string]: string } = {
-//       basic: 'fa-user',
-//       personal: 'fa-address-card',
-//       security: 'fa-lock',
-//       media: 'fa-camera',
-//       other: 'fa-info-circle'
-//     };
-
-//     return (
-//       <div className="space-y-6">
-//         {/* مؤشر الخطوات */}
-//         <div className="flex justify-between items-center px-4">
-//           {steps.map((step, index) => (
-//             <React.Fragment key={step}>
-//               <div className="flex flex-col items-center">
-//                 <button
-//                   onClick={() => setCurrentStep(index + 1)}
-//                   className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${
-//                     index + 1 === currentStep 
-//                       ? 'border-indigo-600 bg-indigo-600 text-white shadow-lg scale-110'
-//                       : index + 1 < currentStep 
-//                       ? 'border-green-500 bg-green-500 text-white'
-//                       : 'border-gray-300 bg-white dark:bg-gray-700 text-gray-400'
-//                   }`}
-//                 >
-//                   {index + 1 < currentStep ? (
-//                     <i className="fas fa-check text-sm"></i>
-//                   ) : (
-//                     <i className={`fas ${stepIcons[step] || 'fa-circle'} text-xs`}></i>
-//                   )}
-//                 </button>
-//                 <span className={`text-xs mt-2 text-center max-w-20 ${
-//                   index + 1 === currentStep ? 'text-indigo-600 dark:text-indigo-400 font-medium' : 'text-gray-500'
-//                 }`}>
-//                   {stepLabels[step] || step}
-//                 </span>
-//               </div>
-//               {index < steps.length - 1 && (
-//                 <div className={`flex-1 h-1 mx-2 ${
-//                   index + 1 < currentStep ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-600'
-//                 }`}></div>
-//               )}
-//             </React.Fragment>
-//           ))}
-//         </div>
-
-//         {/* محتوى الخطوة الحالية */}
-//         <div className="min-h-[300px] animate-fade-in">
-//           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6">
-//             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-//               <i className={`fas ${stepIcons[steps[currentStep - 1]]} text-indigo-600`}></i>
-//               {stepLabels[steps[currentStep - 1]] || steps[currentStep - 1]}
-//             </h3>
-//             <div className="grid gap-4">
-//               {categorizedFields[steps[currentStep - 1]]?.map((field) => (
-//                 <FormFieldComponent
-//                   key={field.name}
-//                   field={field}
-//                   value={formData[field.name] || ""}
-//                   onChange={(value: any) => onFormDataChange({ ...formData, [field.name]: value })}
-//                   additionalQueries={additionalQueries}
-//                   formData={formData}
-//                   compact={false}
-//                 />
-//               ))}
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* أزرار التنقل بين الخطوات */}
-//         <div className="flex justify-between">
-//           <Button
-//             type="button"
-//             onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
-//             disabled={currentStep === 1}
-//             variant="outline"
-//             className="px-6"
-//           >
-//             <i className="fas fa-arrow-left mr-2"></i>
-//             Previous
-//           </Button>
-
-//           {currentStep < steps.length ? (
-//             <Button
-//               type="button"
-//               onClick={() => setCurrentStep(prev => Math.min(steps.length, prev + 1))}
-//               className="px-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-lg"
-//             >
-//               Next
-//               <i className="fas fa-arrow-right ml-2"></i>
-//             </Button>
-//           ) : (
-//             <div className="flex gap-3">
-//               {renderSaveButtons()}
-//             </div>
-//           )}
-//         </div>
-//       </div>
-//     );
-//   };
-
-//   // 4. موديل البروفايل
-//   const renderProfileModal = () => {
-//     const sectionIcons: { [key: string]: string } = {
-//       basic: 'fa-user-circle',
-//       personal: 'fa-address-card',
-//       security: 'fa-shield-alt',
-//       media: 'fa-images',
-//       other: 'fa-info-circle'
-//     };
-
-//     const sectionColors: { [key: string]: string } = {
-//       basic: 'from-blue-500 to-indigo-600',
-//       personal: 'from-green-500 to-emerald-600',
-//       security: 'from-red-500 to-rose-600',
-//       media: 'from-purple-500 to-pink-600',
-//       other: 'from-gray-500 to-gray-600'
-//     };
-
-//     return (
-//       <div className="space-y-6">
-//         {Object.entries(categorizedFields).map(([category, fields]) => (
-//           <div key={category} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-//             <div className={`bg-gradient-to-r ${sectionColors[category] || 'from-gray-500 to-gray-600'} p-4`}>
-//               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-//                 <i className={`fas ${sectionIcons[category]} text-white`}></i>
-//                 {category === 'basic' && 'Basic Information'}
-//                 {category === 'personal' && 'Personal Details'}
-//                 {category === 'security' && 'Security Settings'}
-//                 {category === 'media' && 'Media Upload'}
-//                 {category === 'other' && 'Additional Information'}
-//               </h3>
-//             </div>
-//             <div className="p-6">
-//               <div className="grid gap-4">
-//                 {fields.map((field) => (
-//                   <FormFieldComponent
-//                     key={field.name}
-//                     field={field}
-//                     value={formData[field.name] || ""}
-//                     onChange={(value: any) => onFormDataChange({ ...formData, [field.name]: value })}
-//                     additionalQueries={additionalQueries}
-//                     formData={formData}
-//                     compact={false}
-//                   />
-//                 ))}
-//               </div>
-//             </div>
-//           </div>
-//         ))}
-//         {renderSaveButtons()}
-//       </div>
-//     );
-//   };
-
-//   // تحديد الموديل المراد عرضه
-//   const renderModalContent = () => {
-//     switch (selectedModalType) {
-//       case 'tabs':
-//         return renderTabsModal();
-//       case 'steps':
-//         return renderStepsModal();
-//       case 'profile':
-//         return renderProfileModal();
-//       case 'simple':
-//       default:
-//         return renderSimpleModal();
-//     }
-//   };
-
-//   return (
-//     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-//       <div className={`bg-white dark:bg-gray-900 rounded-3xl shadow-2xl ${
-//         selectedModalType === 'profile' ? 'w-full max-w-2xl' : 
-//         selectedModalType === 'steps' ? 'w-full max-w-3xl' :
-//         compactLayout ? 'w-full max-w-4xl' : 'w-full max-w-md'
-//       } p-6 relative max-h-[90vh] overflow-y-auto`}>
+  // ✅ استخدام useEffect لتحديث البيانات بعد الـ render
+  useEffect(() => {
+    console.log('🎯 EDITING ITEM DATA:', editingItem);
+    console.log('🎯 CURRENT FORM DATA:', formData);
+    console.log('🎯 FORM FIELDS:', safeFormFields);
+    
+    if (editingItem && !isInitialized) {
+      const processedData = { ...editingItem };
+      
+      safeFormFields.forEach(field => {
+        if (!field || !field.name) return;
         
-//         {/* زر الإغلاق */}
-//         <button 
-//           onClick={onClose}
-//           className="absolute top-4 right-4 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-xl font-bold z-10 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
-//         >
-//           ✖
-//         </button>
+        // 🔥 تجاهل كلمة المرور عند التعديل
+        if (field.type === 'password' && editingItem.id) {
+          processedData[field.name] = '';
+          return;
+        }
         
-//         {/* الهيدر */}
-//         <div className="text-center mb-6">
-//           <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-//             {editingItem ? `Edit ${title}` : `Add ${title}`}
-//           </h2>
-//           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-//             Choose your preferred view style
-//           </p>
-//         </div>
+        // 🔥 معالجة بيانات الأب
+        if (field.name === 'father_name' && editingItem.father?.name) {
+          processedData.father_name = editingItem.father.name;
+        }
+        if (field.name === 'father_phone' && editingItem.father?.phone) {
+          processedData.father_phone = editingItem.father.phone;
+        }
+        if (field.name === 'father_job' && editingItem.father?.job) {
+          processedData.father_job = editingItem.father.job;
+        }
         
-//         {/* إختيار طريقة العرض */}
-//         {renderViewSelector()}
+        // 🔥 معالجة بيانات الأم
+        if (field.name === 'mother_name' && editingItem.mother?.name) {
+          processedData.mother_name = editingItem.mother.name;
+        }
+        if (field.name === 'mother_phone' && editingItem.mother?.phone) {
+          processedData.mother_phone = editingItem.mother.phone;
+        }
+        if (field.name === 'mother_job' && editingItem.mother?.job) {
+          processedData.mother_job = editingItem.mother.job;
+        }
         
-//         {/* محتوى الموديل */}
-//         <div className="mt-4">
-//           {renderModalContent()}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
+        // معالجة class-selector
+        if (field.type === 'custom' && field.component === 'class-selector') {
+          if (editingItem.class_ids) {
+            processedData.class_ids = Array.isArray(editingItem.class_ids) 
+              ? editingItem.class_ids 
+              : [editingItem.class_ids];
+          } else if (editingItem.classes) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            processedData.class_ids = editingItem.classes.map((cls: any) => cls.id);
+          }
+        }
+        
+        // 🔥 تحسين معالجة الصور
+        if (['image', 'avatar', 'photo', 'logo'].includes(field.type) && editingItem[field.name]) {
+          const imageValue = editingItem[field.name];
+          if (typeof imageValue === 'string') {
+            processedData[field.name] = imageValue;
+          } else if (typeof imageValue === 'object' && imageValue.url) {
+            processedData[field.name] = imageValue.url;
+          } else {
+            processedData[field.name] = imageValue;
+          }
+        }
+      });
+      
+      console.log('🎯 PROCESSED FORM DATA:', processedData);
+      setLocalFormData(processedData);
+      setIsInitialized(true);
+      
+      // ✅ تحديث formData الرئيسي بعد الـ render
+      setTimeout(() => {
+        onFormDataChange(processedData);
+      }, 0);
+    } else if (!editingItem && !isInitialized) {
+      setLocalFormData({});
+      setIsInitialized(true);
+    }
+  }, [editingItem, safeFormFields, isInitialized, onFormDataChange]);
 
-// export default SmartFormModal;
+  // ✅ تحديث formData الرئيسي عند تغيير localFormData
+  useEffect(() => {
+    if (isInitialized && Object.keys(localFormData).length > 0) {
+      onFormDataChange(localFormData);
+    }
+  }, [localFormData, onFormDataChange, isInitialized]);
+
+  // ✅ تقسيم الحقول ديناميكي للتابات
+  const getTabsData = () => {
+    if (!Array.isArray(safeFormFields) || safeFormFields.length === 0) {
+      return [];
+    }
+
+    const basicFields = safeFormFields.filter(field => 
+      field && ['text', 'email', 'password', 'tel', 'url', 'number','switch'].includes(field.type)
+    );
+    
+    const selectionFields = safeFormFields.filter(field => 
+      field && ['select', 'custom'].includes(field.type)
+    );
+    
+    const settingsFields = safeFormFields.filter(field => 
+      field && ['checkbox'].includes(field.type)
+    );
+    
+    const mediaFields = safeFormFields.filter(field => 
+      field && ['image', 'file'].includes(field.type)
+    );
+    
+    const advancedFields = safeFormFields.filter(field => 
+      field && ['textarea', 'date', 'datetime-local', 'time'].includes(field.type)
+    );
+
+    const tabs = [
+      { id: 'basic', label: '📝 Basic', fields: basicFields, icon: 'fa-file-alt' },
+      { id: 'selection', label: '📋 Selection', fields: selectionFields, icon: 'fa-list' },
+      { id: 'settings', label: '⚡ Settings', fields: settingsFields, icon: 'fa-cog' },
+      { id: 'media', label: '🖼️ Media', fields: mediaFields, icon: 'fa-image' },
+      { id: 'advanced', label: '🔧 Advanced', fields: advancedFields, icon: 'fa-tools' },
+    ];
+
+    return tabs.filter(tab => tab.fields && tab.fields.length > 0);
+  };
+
+  const tabs = getTabsData();
+  const currentTab = tabs.find(tab => tab.id === activeTab) || tabs[0] || { id: 'basic', fields: [] };
+  const modalSize = 'w-full max-w-5xl';
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleLocalFormDataChange = (fieldName: string, value: any) => {
+    setLocalFormData(prev => {
+      const newData = { ...prev, [fieldName]: value };
+      return newData;
+    });
+  };
+
+  // 🔥 عرض رسالة إذا لم توجد حقول
+  if (!Array.isArray(safeFormFields) || safeFormFields.length === 0) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md p-6 relative">
+          <button 
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-xl font-bold z-10"
+          >
+            ✖
+          </button>
+          
+          <div className="text-center py-8">
+            <i className="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-4"></i>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              No Form Fields Defined
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400">
+              No form fields are available for {title}. Please check the configuration.
+            </p>
+          </div>
+          
+          <div className="flex justify-center pt-4">
+            <Button
+              type="button"
+              style={{background:"#fee4e4",color:'black'}}
+              className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 hover:bg-gray-200 transition-all rounded-xl border-none py-3 px-6 text-base font-medium"
+              onClick={onClose}
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className={`bg-white dark:bg-gray-900 rounded-3xl shadow-2xl ${modalSize} p-6 relative max-h-[90vh] overflow-hidden`}>
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-xl font-bold z-10"
+        >
+          ✖
+        </button>
+        
+        {/* الهيدر */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+            {editingItem ? `Edit ${title}` : `Add ${title}`}
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            {editingItem ? 'Update the item details' : 'Fill in the details below'}
+          </p>
+          {/* 🔥 إضافة ملاحظة للباسوورد */}
+          {editingItem && safeFormFields.some(f => f && f.type === 'password') && (
+            <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
+              💡 Leave password field empty to keep current password
+            </p>
+          )}
+        </div>
+
+        {/* ✅ التابات */}
+        {tabs.length > 0 ? (
+          <>
+            <div className="mb-6">
+              <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex-1 text-center justify-center
+                      ${activeTab === tab.id 
+                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-md' 
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/50'
+                      }
+                    `}
+                  >
+                    <i className={`fas ${tab.icon} text-xs`}></i>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form className="space-y-6" onSubmit={(e) => {
+              e.preventDefault();
+              onSave({ keepOpen: false });
+            }}>
+              <div className="min-h-[400px] max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+                <div className={`grid gap-6 ${compactLayout ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {currentTab?.fields?.map((field) => (
+                    field && (
+                      <FormFieldComponent
+                        key={field.name}
+                        field={field}
+                        value={localFormData[field.name] || ""}
+                        onChange={(value: unknown) => handleLocalFormDataChange(field.name, value)}
+                        additionalQueries={additionalQueries}
+                        formData={localFormData}
+                        compact={compactLayout}
+                        isEditing={!!editingItem}
+                      />
+                    )
+                  ))}
+                </div>
+
+                {(!currentTab?.fields || currentTab.fields.length === 0) && (
+                  <div className="text-center py-16">
+                    <i className="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                    <p className="text-gray-500 dark:text-gray-400 text-lg">
+                      No fields in this section
+                    </p>
+                    <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
+                      Switch to another tab to see available fields
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <Button
+                  style={{color:'black'}}
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-green-200 transition-all rounded-xl py-3 text-base font-medium"
+                  disabled={saveLoading}
+                >
+                  {saveLoading ? "Saving..." : editingItem ? "Update" : "Create"}
+                </Button>
+
+                <Button
+                  style={{color:'black'}}
+                  type="button"
+                  className="flex-1 bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-green-200 transition-all rounded-xl py-3 text-base font-medium"
+                  disabled={saveLoading}
+                  onClick={() => {
+                    onSave({ keepOpen: true });
+                  }}
+                >
+                  {saveLoading ? "Saving..." : editingItem ? "Update & New" : "Create & New"}
+                </Button>
+
+                <Button
+                  type="button"
+                  style={{background:"#fee4e4",color:'black'}}
+                  className="flex-1 bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 hover:bg-gray-200 transition-all rounded-xl border-none py-3 text-base font-medium"
+                  onClick={onClose}
+                  disabled={saveLoading}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </>
+        ) : (
+          <div className="text-center py-16">
+            <i className="fas fa-exclamation-circle text-4xl text-red-500 mb-4"></i>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              No Form Tabs Available
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              There are no form fields configured for {title}.
+            </p>
+            <div className="flex justify-center pt-6">
+              <Button
+                type="button"
+                style={{background:"#fee4e4",color:'black'}}
+                className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 hover:bg-gray-200 transition-all rounded-xl border-none py-3 px-6 text-base font-medium"
+                onClick={onClose}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default FormModal;

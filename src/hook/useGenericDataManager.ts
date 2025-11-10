@@ -449,8 +449,8 @@ export function useGenericDataManager({
     return !!event?.preventDefault && typeof event.preventDefault === 'function';
   };
 
-  const handleSave = async (e: SaveOptions): Promise<void> => {
-    let itemData: Record<string, string | number | File | null> = {};
+const handleSave = async (e: SaveOptions): Promise<void> => {
+    let itemData: Record<string, any> = {};
     let keepOpen = false;
     let hasFiles = false;
 
@@ -464,29 +464,59 @@ export function useGenericDataManager({
     itemData = { ...formData, ...initialData };
 
     if (editingItem?.id) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (itemData as any).id = editingItem.id;
+      itemData.id = editingItem.id;
     }
 
-    hasFiles = Object.values(itemData).some(v => v instanceof File);
-const excludedKeys = ['active', 'createdAt', 'updatedAt', '_method'];
-Object.keys(itemData).forEach((key) => {
-  if (excludedKeys.includes(key)) {
-    delete itemData[key];
-  }
-});
+    console.log('📸 Form data before processing:', itemData);
+
+    // Check for files
+    hasFiles = Object.values(itemData).some(v => 
+      v instanceof File || 
+      (v && typeof v === 'object' && Array.isArray(v.new) && v.new.length > 0)
+    );
+
+    const excludedKeys = ['active', 'createdAt', 'updatedAt', '_method'];
+    Object.keys(itemData).forEach((key) => {
+      if (excludedKeys.includes(key)) {
+        delete itemData[key];
+      }
+    });
+
     let dataToSend: Entity | FormData;
     let isFormData = false;
 
     if (hasFiles) {
       const formDataObj = new FormData();
+      
       Object.entries(itemData).forEach(([key, value]) => {
-        if (value instanceof File) {
+        if (key === 'gallery' && value && typeof value === 'object' && 'existing' in value && 'new' in value) {
+          console.log('🖼️ Processing gallery:', value);
+          
+          // إرسال الصور القديمة
+          value.existing.forEach((url: string, index: number) => {
+            console.log(`🔗 Keeping existing image [${index}]:`, url);
+            formDataObj.append(`existing_gallery[${index}]`, url);
+          });
+          
+          // إرسال الصور الجديدة
+          value.new.forEach((file: File, index: number) => {
+            console.log(`📁 Adding new gallery file [${index}]:`, file.name);
+            formDataObj.append(`gallery[${index}]`, file);
+          });
+        } else if (value instanceof File) {
+          console.log(`📄 Adding file ${key}:`, value.name);
           formDataObj.append(key, value);
         } else if (value !== null && value !== undefined && value !== '') {
           formDataObj.append(key, String(value));
         }
       });
+      
+      // Log FormData
+      console.log('📤 FormData entries:');
+      for (const entry of formDataObj.entries()) {
+        console.log('  ', entry[0], ':', entry[1] instanceof File ? `File: ${entry[1].name}` : entry[1]);
+      }
+      
       dataToSend = formDataObj;
       isFormData = true;
     } else {

@@ -1,11 +1,9 @@
 // app/products/page.tsx
 'use client';
 import GenericDataManager from "@/components/Tablecomponents/GenericDataManager";
-import { useRouter } from "next/navigation";
+import { MultiImageUploader } from "@/components/Tablecomponents/MultiImageUploader";
 
 export default function ProductsPage() {
-  const router = useRouter();
-
   return (
     <GenericDataManager
       endpoint="card"
@@ -51,27 +49,54 @@ export default function ProductsPage() {
           label: 'Category', 
           sortable: true 
         },
-        // Gallery preview column
+        // Gallery preview column - محسنة
         { 
           key: 'gallery', 
           label: 'Gallery', 
           sortable: false,
           render: (item) => {
             const gallery = item.gallery || [];
-            if (gallery.length === 0) return 'No images';
+            if (gallery.length === 0) {
+              return (
+                <span className="text-gray-400 text-sm">No images</span>
+              );
+            }
+            
             return (
-              <div className="flex items-center gap-1">
-                <span className="text-sm">{gallery.length} images</span>
-                {gallery[0] && (
-                  <img 
-                    src={gallery[0]} 
-                    alt="Preview" 
-                    className="w-8 h-8 object-cover rounded"
-                  />
-                )}
+              <div className="flex items-center gap-2">
+                <div className="flex -space-x-2">
+                  {gallery.slice(0, 3).map((img: string, index: number) => (
+                    <img 
+                      key={index}
+                      src={img} 
+                      alt={`Gallery ${index + 1}`}
+                      className="w-8 h-8 object-cover rounded border-2 border-white shadow-sm"
+                    />
+                  ))}
+                  {gallery.length > 3 && (
+                    <div className="w-8 h-8 bg-gray-200 rounded border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
+                      +{gallery.length - 3}
+                    </div>
+                  )}
+                </div>
+                <span className="text-xs text-gray-500">{gallery.length} images</span>
               </div>
             );
           }
+        },
+        { 
+          key: 'active', 
+          label: 'Status', 
+          sortable: true,
+          render: (item) => (
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              item.active 
+                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+            }`}>
+              {item.active ? 'Active' : 'Inactive'}
+            </span>
+          )
         },
       ]}
 
@@ -120,7 +145,7 @@ export default function ProductsPage() {
         { 
           name: 'discount', 
           label: 'Discount (%)', 
-          type: 'text', 
+          type: 'number', 
           required: false,
           placeholder: 'Enter discount percentage',
         },
@@ -265,14 +290,17 @@ export default function ProductsPage() {
           placeholder: 'Enter video URL'
         },
         
-        // Gallery instead of single image
+        // Gallery - باستخدام المكون الجديد
         { 
           name: 'gallery', 
           label: 'Product Gallery', 
-          type: 'file', 
+          type: 'custom',
+          component: MultiImageUploader,
           required: false,
-          accept: 'image/*',
-          multiple: true, // علشان ترفع أكتر من صورة
+          props: {
+            maxFiles: 10,
+            accept: 'image/*'
+          }
         },
 
         // Status
@@ -289,6 +317,31 @@ export default function ProductsPage() {
       showDeleteButton={true}
       showBulkActions={true}
       showDeletedToggle={true}
+      
+      // فلترز إضافية
+      availableFilters={[
+        {
+          key: 'name',
+          label: 'Product Name',
+          type: 'text',
+          placeholder: 'Search by product name...'
+        },
+        {
+          key: 'category',
+          label: 'Category',
+          type: 'text',
+          placeholder: 'Search by category...'
+        },
+        {
+          key: 'active',
+          label: 'Status',
+          type: 'select',
+          options: [
+            { value: 'true', label: 'Active' },
+            { value: 'false', label: 'Inactive' }
+          ]
+        }
+      ]}
     />
   );
 }

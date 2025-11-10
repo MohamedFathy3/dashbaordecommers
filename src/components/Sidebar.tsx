@@ -1,7 +1,7 @@
 'use client'
 
 import { 
-  Home, Database, Computer, User,
+  Home, Database, Computer, Ship,
   ChevronDown, ChevronRight, LucideIcon,
   Clock, Package, Megaphone
 } from "lucide-react"
@@ -31,6 +31,7 @@ const navItems: NavItem[] = [
   { name: 'orders', icon: Clock, href: '/orders' },
   { name: 'category', icon: Computer, href: '/category' },
   { name: 'Product', icon: Package, href: '/Product' },
+{ name: 'Shipping', icon: Ship, href: '/shippeng' },
   { name: 'offer', icon: Database, href: '/offer' },
   { name: 'conectUs', icon: Megaphone, href: '/conectUs' },
 ]

@@ -2,6 +2,9 @@
 import { UseMutationResult } from '@tanstack/react-query';
 export type ModalType = 'simple' | 'tabs' | 'steps' | 'profile';
 import { FormEvent } from 'react';
+import { FC } from 'react';
+import { MultiImageUploaderProps } from '@/components/Tablecomponents/MultiImageUploader';
+import { ImageUploaderProps } from '@/components/Tablecomponents/ImageUpload';
 export interface Entity {
   id: number;
   name: string;
@@ -126,20 +129,32 @@ export interface ImageData {
   alt?: string;
 }
 
+
+export type CustomComponent = 
+  | 'checkbox-group' 
+  | 'time-selector' 
+  | 'MultiImageUploader'
+  | FC<MultiImageUploaderProps>
+  | FC<ImageUploaderProps>;
+
+
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'select' | 'email' | 'password' | 'date'| 'custom' |'datetime-local' |'custom-time' | 'time' | 'image' | 'switch' | 'textarea' | 'file' | 'tel' | 'url' | 'checkbox';
+  type: 'text' | 'number' | 'select' | 'email' | 'password' | 'date' | 'datetime-local' | 'time' | 'switch' | 'textarea' | 'file' | 'tel' | 'url' | 'checkbox' | 'custom';
   required?: boolean;
   options?: { value: string | number; label: string }[];
   optionsKey?: string;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   defaultValue?: string | ((formData: Record<string, any>) => string);
   multiple?: boolean;
+  maxFiles?: number; // إضافة هذا الحقل
   accept?: string;
   placeholder?: string;
   rows?: number;
-  component?: 'checkbox-group' | 'time-selector'; 
+  component?: CustomComponent; // تحديث النوع
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  props?: Record<string, any>; // إضافة props للمكونات المخصصة
 }
 
 export interface MutationResult {
