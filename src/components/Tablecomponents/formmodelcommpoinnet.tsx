@@ -1,6 +1,6 @@
 // components/Tablecomponents/formmodelcommpoinnet.tsx
 'use client';
-import React, { useState, useEffect, useRef, useMemo } from "react"; // ✅ أضفنا React و useMemo هنا
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { SelectField } from "./SelectField";
 import { ClassSelector } from "@/components/Tablecomponents/ClassSelector";
 import { ImageUploader } from "@/components/Tablecomponents/ImageUpload";
@@ -36,6 +36,34 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
   console.log('🔍 FormFieldComponent - field:', field);
   console.log('🔍 FormFieldComponent - value:', value);
   console.log('🔍 FormFieldComponent - isEditing:', isEditing);
+
+  // ✅ نقل useMemo إلى أعلى المكون (قبل أي شروط)
+  const normalizedValue = useMemo(() => {
+    if (!value) {
+      return { existing: [], new: [] };
+    }
+    
+    // إذا كانت قيمة مصفوفة (من gallery قديم)
+    if (Array.isArray(value)) {
+      return { 
+        existing: value.filter(item => typeof item === 'string'), // الصور القديمة
+        new: [] // لا توجد صور جديدة
+      };
+    }
+    
+    // إذا كانت قيمة كائن (التنسيق الجديد)
+    if (typeof value === 'object' && value !== null) {
+      return {
+        existing: Array.isArray(value.existing) ? value.existing : [],
+        new: Array.isArray(value.new) ? value.new : []
+      };
+    }
+    
+    // القيمة الافتراضية
+    return { existing: [], new: [] };
+  }, [value]);
+
+  console.log('🎯 NORMALIZED VALUE FOR MULTI IMAGE UPLOADER:', normalizedValue);
 
   // ✅ معالجة حقل التحديد (select)
   if (field.type === "select") {
@@ -77,38 +105,10 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
     );
   }
 
-  // ✅ معالجة MultiImageUploader - التصحيح هنا
+  // ✅ معالجة MultiImageUploader - استخدام normalizedValue المعد مسبقاً
   if (field.type === "custom" && field.component === MultiImageUploader) {
     console.log('🎯 MULTI IMAGE UPLOADER FIELD TRIGGERED!', field);
     console.log('🎯 MULTI IMAGE UPLOADER VALUE:', value);
-    
-    // ✅ تحويل القيمة إلى التنسيق الصحيح باستخدام useMemo
-    const normalizedValue = useMemo(() => {
-      if (!value) {
-        return { existing: [], new: [] };
-      }
-      
-      // إذا كانت قيمة مصفوفة (من gallery قديم)
-      if (Array.isArray(value)) {
-        return { 
-          existing: value.filter(item => typeof item === 'string'), // الصور القديمة
-          new: [] // لا توجد صور جديدة
-        };
-      }
-      
-      // إذا كانت قيمة كائن (التنسيق الجديد)
-      if (typeof value === 'object' && value !== null) {
-        return {
-          existing: Array.isArray(value.existing) ? value.existing : [],
-          new: Array.isArray(value.new) ? value.new : []
-        };
-      }
-      
-      // القيمة الافتراضية
-      return { existing: [], new: [] };
-    }, [value]);
-
-    console.log('🎯 NORMALIZED VALUE FOR MULTI IMAGE UPLOADER:', normalizedValue);
     
     return (
       <div className={`space-y-2 ${compact ? 'col-span-2' : 'col-span-1'}`}>
@@ -117,7 +117,7 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
           {field.required && <span className="text-red-500 ml-1">*</span>}
         </label>
         <MultiImageUploader
-          value={normalizedValue} // ✅ استخدام القيمة الطبيعية
+          value={normalizedValue} // ✅ استخدام القيمة الطبيعية المعدة مسبقاً
           onChange={onChange}
           label={field.label}
           required={field.required}

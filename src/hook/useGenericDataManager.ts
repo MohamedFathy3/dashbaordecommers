@@ -450,6 +450,7 @@ export function useGenericDataManager({
   };
 
 const handleSave = async (e: SaveOptions): Promise<void> => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let itemData: Record<string, any> = {};
     let keepOpen = false;
     let hasFiles = false;
