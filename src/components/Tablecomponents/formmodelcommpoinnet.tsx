@@ -37,7 +37,7 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
   console.log('🔍 FormFieldComponent - value:', value);
   console.log('🔍 FormFieldComponent - isEditing:', isEditing);
 
-  // ✅ نقل useMemo إلى أعلى المكون (قبل أي شروط)
+  // ✅ نقل useMemo واحد فقط إلى أعلى المكون
   const normalizedValue = useMemo(() => {
     if (!value) {
       return { existing: [], new: [] };
@@ -47,7 +47,7 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
     if (Array.isArray(value)) {
       return { 
         existing: value.filter(item => typeof item === 'string'), // الصور القديمة
-        new: [] // لا توجد صور جديدة
+        new: value.filter(item => item instanceof File) // الملفات الجديدة
       };
     }
     
@@ -63,7 +63,7 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
     return { existing: [], new: [] };
   }, [value]);
 
-  console.log('🎯 NORMALIZED VALUE FOR MULTI IMAGE UPLOADER:', normalizedValue);
+  console.log('🎯 NORMALIZED VALUE FOR ALL FIELDS:', normalizedValue);
 
   // ✅ معالجة حقل التحديد (select)
   if (field.type === "select") {
@@ -105,11 +105,24 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
     );
   }
 
-  // ✅ معالجة MultiImageUploader - استخدام normalizedValue المعد مسبقاً
+  // ✅ معالجة MultiImageUploader - الإصلاح الكامل
   if (field.type === "custom" && field.component === MultiImageUploader) {
     console.log('🎯 MULTI IMAGE UPLOADER FIELD TRIGGERED!', field);
-    console.log('🎯 MULTI IMAGE UPLOADER VALUE:', value);
     
+    const handleGalleryChange = (newValue: { existing: string[]; new: File[] }) => {
+      console.log('🔄 Gallery changed - FULL VALUE:', newValue);
+      
+      // ✅ الإصلاح: في التعديل والإضافة، نرسل الملفات الجديدة فقط كمصفوفة
+      // علشان الباك يستقبل gallery[] في الحالتين
+      if (isEditing) {
+        console.log('✏️ EDIT MODE - Sending only new files as array');
+        onChange(newValue.new); // إرسال الملفات الجديدة فقط كمصفوفة
+      } else {
+        console.log('🆕 ADD MODE - Sending only new files as array');
+        onChange(newValue.new); // إرسال الملفات الجديدة فقط كمصفوفة
+      }
+    };
+
     return (
       <div className={`space-y-2 ${compact ? 'col-span-2' : 'col-span-1'}`}>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -117,11 +130,11 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
           {field.required && <span className="text-red-500 ml-1">*</span>}
         </label>
         <MultiImageUploader
-          value={normalizedValue} // ✅ استخدام القيمة الطبيعية المعدة مسبقاً
-          onChange={onChange}
+          value={normalizedValue}
+          onChange={handleGalleryChange}
           label={field.label}
           required={field.required}
-          accept={field.props?.accept || "image/png, image/jpg, image/jpeg, image/svg+xml"}
+          accept={field.props?.accept || "image/jpeg, image/png, image/jpg, image/gif, image/webp"}
           maxFiles={field.props?.maxFiles || 10}
           compact={compact}
         />
@@ -376,7 +389,12 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
             ? "Leave empty to keep current password" 
             : field.placeholder || field.label
         }
-        value={value?.toString() || ""}
+        // ✅ الإصلاح: إذا القيمة كائن، اعرض string فاضي
+        value={
+          (value && typeof value === 'object' && !(value instanceof File)) 
+            ? "" 
+            : value?.toString() || ""
+        }
         onChange={(e) => onChange(e.target.value)}
         required={field.required && !(field.type === 'password' && isEditing)}
         className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"

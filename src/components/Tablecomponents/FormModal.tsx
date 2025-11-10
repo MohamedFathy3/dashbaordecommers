@@ -43,15 +43,14 @@ const FormModal: React.FC<FormModalProps> = ({
   // ✅ استخدام formFields آمن
   const safeFormFields = Array.isArray(formFields) ? formFields : [];
 
-  // ✅ استخدام useEffect لتحديث البيانات بعد الـ render
+  // ✅ التهيئة مرة واحدة فقط عند فتح المودال
   useEffect(() => {
-    console.log('🎯 EDITING ITEM DATA:', editingItem);
-    console.log('🎯 CURRENT FORM DATA:', formData);
-    console.log('🎯 FORM FIELDS:', safeFormFields);
-    
     if (editingItem && !isInitialized) {
+      console.log('🎯 INITIALIZING FORM WITH EDITING ITEM:', editingItem);
+      
       const processedData = { ...editingItem };
       
+      // ✅ معالجة الحقول الخاصة بشكل صحيح
       safeFormFields.forEach(field => {
         if (!field || !field.name) return;
         
@@ -61,108 +60,154 @@ const FormModal: React.FC<FormModalProps> = ({
           return;
         }
         
-        // 🔥 معالجة بيانات الأب
-        if (field.name === 'father_name' && editingItem.father?.name) {
-          processedData.father_name = editingItem.father.name;
-        }
-        if (field.name === 'father_phone' && editingItem.father?.phone) {
-          processedData.father_phone = editingItem.father.phone;
-        }
-        if (field.name === 'father_job' && editingItem.father?.job) {
-          processedData.father_job = editingItem.father.job;
-        }
-        
-        // 🔥 معالجة بيانات الأم
-        if (field.name === 'mother_name' && editingItem.mother?.name) {
-          processedData.mother_name = editingItem.mother.name;
-        }
-        if (field.name === 'mother_phone' && editingItem.mother?.phone) {
-          processedData.mother_phone = editingItem.mother.phone;
-        }
-        if (field.name === 'mother_job' && editingItem.mother?.job) {
-          processedData.mother_job = editingItem.mother.job;
-        }
-        
-        // معالجة class-selector
-        if (field.type === 'custom' && field.component === 'class-selector') {
-          if (editingItem.class_ids) {
-            processedData.class_ids = Array.isArray(editingItem.class_ids) 
-              ? editingItem.class_ids 
-              : [editingItem.class_ids];
-          } else if (editingItem.classes) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            processedData.class_ids = editingItem.classes.map((cls: any) => cls.id);
+        // ✅ إصلاح مشكلة الـ category_id
+        if (field.name === 'category_id') {
+          console.log('🔍 CATEGORY FIELD DEBUG:', {
+            category_id: editingItem.category_id,
+            category: editingItem.category,
+            field: field
+          });
+          
+          // الحالة 1: إذا كان category_id موجود مباشرة
+          if (editingItem.category_id) {
+            processedData.category_id = editingItem.category_id;
+          } 
+          // الحالة 2: إذا كان category كائن به id
+          else if (editingItem.category && editingItem.category.id) {
+            processedData.category_id = editingItem.category.id;
           }
+          // الحالة 3: إذا كان category قيمة مباشرة (رقم)
+          else if (editingItem.category && typeof editingItem.category === 'number') {
+            processedData.category_id = editingItem.category;
+          }
+          // الحالة 4: إذا كان category نص (تحويل من الاسم)
+          else if (editingItem.category && typeof editingItem.category === 'string') {
+            // البحث في additionalQueries عن الـ category المناسب
+            const categories = additionalQueries?.categories?.data || [];
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const foundCategory = categories.find((cat: any) => 
+              cat.name === editingItem.category || cat.id.toString() === editingItem.category
+            );
+            if (foundCategory) {
+              processedData.category_id = foundCategory.id;
+            }
+          }
+          
+          console.log('✅ FINAL CATEGORY ID:', processedData.category_id);
         }
         
-        // 🔥 تحسين معالجة الصور
-        if (['image', 'avatar', 'photo', 'logo'].includes(field.type) && editingItem[field.name]) {
-          const imageValue = editingItem[field.name];
-          if (typeof imageValue === 'string') {
-            processedData[field.name] = imageValue;
-          } else if (typeof imageValue === 'object' && imageValue.url) {
-            processedData[field.name] = imageValue.url;
+        // ✅ معالجة gallery بشكل صحيح - الباك يرسلها كمصفوفة URLs
+        if (field.name === 'gallery') {
+          if (Array.isArray(editingItem.gallery)) {
+            processedData.gallery = { 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              existing: editingItem.gallery.filter((img: any) => typeof img === 'string'), 
+              new: [] 
+            };
           } else {
-            processedData[field.name] = imageValue;
+            // ✅ قيمة افتراضية
+            processedData.gallery = { existing: [], new: [] };
           }
+          console.log('✅ PROCESSED GALLERY FOR UPLOADER:', processedData.gallery);
         }
       });
       
-      console.log('🎯 PROCESSED FORM DATA:', processedData);
+      console.log('🎯 FINAL PROCESSED FORM DATA:', processedData);
       setLocalFormData(processedData);
       setIsInitialized(true);
-      
-      // ✅ تحديث formData الرئيسي بعد الـ render
-      setTimeout(() => {
-        onFormDataChange(processedData);
-      }, 0);
+      onFormDataChange(processedData);
     } else if (!editingItem && !isInitialized) {
-      setLocalFormData({});
+      // ✅ تهيئة نموذج جديد
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const initialData: Record<string, any> = {};
+      
+      // تعيين القيم الافتراضية
+      safeFormFields.forEach(field => {
+        if (!field || !field.name) return;
+        
+        if (field.name === 'gallery') {
+          initialData[field.name] = { existing: [], new: [] }; // ✅ الهيكل الصحيح للـ uploader
+        } else if (field.defaultValue !== undefined) {
+          initialData[field.name] = field.defaultValue;
+        } else if (field.type === 'select' && field.options && field.options.length > 0) {
+          initialData[field.name] = field.options[0].value;
+        } else if (field.type === 'switch') {
+          initialData[field.name] = false;
+        } else {
+          initialData[field.name] = '';
+        }
+      });
+      
+      setLocalFormData(initialData);
       setIsInitialized(true);
+      onFormDataChange(initialData);
     }
-  }, [editingItem, safeFormFields, isInitialized, onFormDataChange]);
+  }, [editingItem, safeFormFields, isInitialized, onFormDataChange, additionalQueries]);
 
   // ✅ تحديث formData الرئيسي عند تغيير localFormData
   useEffect(() => {
     if (isInitialized && Object.keys(localFormData).length > 0) {
+      console.log('🔄 UPDATING FORM DATA:', localFormData);
       onFormDataChange(localFormData);
     }
   }, [localFormData, onFormDataChange, isInitialized]);
 
-  // ✅ تقسيم الحقول ديناميكي للتابات
+  // ✅ تقسيم الحقول ديناميكي للتابات - إصلاح التكرار
   const getTabsData = () => {
     if (!Array.isArray(safeFormFields) || safeFormFields.length === 0) {
       return [];
     }
 
+    // ✅ إصلاح: منع تكرار الحقول بين التابات
+    const usedFields = new Set();
+    
     const basicFields = safeFormFields.filter(field => 
-      field && ['text', 'email', 'password', 'tel', 'url', 'number','switch'].includes(field.type)
+      field && 
+      !usedFields.has(field.name) && 
+      ['text', 'email', 'password', 'tel', 'url', 'number', 'switch'].includes(field.type)
     );
+    basicFields.forEach(field => usedFields.add(field.name));
     
     const selectionFields = safeFormFields.filter(field => 
-      field && ['select', 'custom'].includes(field.type)
+      field && 
+      !usedFields.has(field.name) && 
+      ['select'].includes(field.type)
     );
+    selectionFields.forEach(field => usedFields.add(field.name));
     
-    const settingsFields = safeFormFields.filter(field => 
-      field && ['checkbox'].includes(field.type)
+    const customFields = safeFormFields.filter(field => 
+      field && 
+      !usedFields.has(field.name) && 
+      field.type === 'custom' && 
+      field.component?.name !== 'MultiImageUploader'
     );
+    customFields.forEach(field => usedFields.add(field.name));
     
     const mediaFields = safeFormFields.filter(field => 
-      field && ['image', 'file'].includes(field.type)
+      field && 
+      !usedFields.has(field.name) && 
+      (
+        ['image', 'file'].includes(field.type) || 
+        (field.type === 'custom' && field.component?.name === 'MultiImageUploader')
+      )
     );
+    mediaFields.forEach(field => usedFields.add(field.name));
     
     const advancedFields = safeFormFields.filter(field => 
-      field && ['textarea', 'date', 'datetime-local', 'time'].includes(field.type)
+      field && 
+      !usedFields.has(field.name) && 
+      ['textarea', 'date', 'datetime-local', 'time', 'checkbox'].includes(field.type)
     );
 
     const tabs = [
       { id: 'basic', label: '📝 Basic', fields: basicFields, icon: 'fa-file-alt' },
       { id: 'selection', label: '📋 Selection', fields: selectionFields, icon: 'fa-list' },
-      { id: 'settings', label: '⚡ Settings', fields: settingsFields, icon: 'fa-cog' },
+      { id: 'custom', label: '⚙️ Custom', fields: customFields, icon: 'fa-cog' },
       { id: 'media', label: '🖼️ Media', fields: mediaFields, icon: 'fa-image' },
       { id: 'advanced', label: '🔧 Advanced', fields: advancedFields, icon: 'fa-tools' },
     ];
 
+    // ✅ إرجاع التابات التي تحتوي على حقول فقط
     return tabs.filter(tab => tab.fields && tab.fields.length > 0);
   };
 
@@ -170,12 +215,30 @@ const FormModal: React.FC<FormModalProps> = ({
   const currentTab = tabs.find(tab => tab.id === activeTab) || tabs[0] || { id: 'basic', fields: [] };
   const modalSize = 'w-full max-w-5xl';
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // ✅ إصلاح: إزالة معالجة gallery الخاصة
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleLocalFormDataChange = (fieldName: string, value: any) => {
+    console.log(`🔄 FIELD ${fieldName} CHANGED TO:`, value);
+    
     setLocalFormData(prev => {
       const newData = { ...prev, [fieldName]: value };
+      console.log('🔄 UPDATED LOCAL FORM DATA:', newData);
       return newData;
     });
+  };
+
+  // ✅ إعادة تعيين عند إغلاق المودال
+  const handleClose = () => {
+    setLocalFormData({});
+    setIsInitialized(false);
+    onClose();
+  };
+
+  const handleSaveClick = (options: { keepOpen: boolean }) => {
+    console.log('💾 SAVING FORM DATA:', localFormData);
+    
+    // ❌ إزالة معالجة gallery - سيتم معالجتها في useGenericDataManager
+    onSave(options);
   };
 
   // 🔥 عرض رسالة إذا لم توجد حقول
@@ -184,7 +247,7 @@ const FormModal: React.FC<FormModalProps> = ({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
         <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md p-6 relative">
           <button 
-            onClick={onClose}
+            onClick={handleClose}
             className="absolute top-4 right-4 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-xl font-bold z-10"
           >
             ✖
@@ -205,7 +268,7 @@ const FormModal: React.FC<FormModalProps> = ({
               type="button"
               style={{background:"#fee4e4",color:'black'}}
               className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 hover:bg-gray-200 transition-all rounded-xl border-none py-3 px-6 text-base font-medium"
-              onClick={onClose}
+              onClick={handleClose}
             >
               Close
             </Button>
@@ -219,7 +282,7 @@ const FormModal: React.FC<FormModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className={`bg-white dark:bg-gray-900 rounded-3xl shadow-2xl ${modalSize} p-6 relative max-h-[90vh] overflow-hidden`}>
         <button 
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-4 right-4 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-xl font-bold z-10"
         >
           ✖
@@ -267,7 +330,7 @@ const FormModal: React.FC<FormModalProps> = ({
 
             <form className="space-y-6" onSubmit={(e) => {
               e.preventDefault();
-              onSave({ keepOpen: false });
+              handleSaveClick({ keepOpen: false });
             }}>
               <div className="min-h-[400px] max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
                 <div className={`grid gap-6 ${compactLayout ? 'grid-cols-2' : 'grid-cols-1'}`}>
@@ -276,7 +339,7 @@ const FormModal: React.FC<FormModalProps> = ({
                       <FormFieldComponent
                         key={field.name}
                         field={field}
-                        value={localFormData[field.name] || ""}
+                        value={localFormData[field.name]}
                         onChange={(value: unknown) => handleLocalFormDataChange(field.name, value)}
                         additionalQueries={additionalQueries}
                         formData={localFormData}
@@ -316,7 +379,7 @@ const FormModal: React.FC<FormModalProps> = ({
                   className="flex-1 bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-green-200 transition-all rounded-xl py-3 text-base font-medium"
                   disabled={saveLoading}
                   onClick={() => {
-                    onSave({ keepOpen: true });
+                    handleSaveClick({ keepOpen: true });
                   }}
                 >
                   {saveLoading ? "Saving..." : editingItem ? "Update & New" : "Create & New"}
@@ -326,7 +389,7 @@ const FormModal: React.FC<FormModalProps> = ({
                   type="button"
                   style={{background:"#fee4e4",color:'black'}}
                   className="flex-1 bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 hover:bg-gray-200 transition-all rounded-xl border-none py-3 text-base font-medium"
-                  onClick={onClose}
+                  onClick={handleClose}
                   disabled={saveLoading}
                 >
                   Cancel
@@ -348,7 +411,7 @@ const FormModal: React.FC<FormModalProps> = ({
                 type="button"
                 style={{background:"#fee4e4",color:'black'}}
                 className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 hover:bg-gray-200 transition-all rounded-xl border-none py-3 px-6 text-base font-medium"
-                onClick={onClose}
+                onClick={handleClose}
               >
                 Close
               </Button>

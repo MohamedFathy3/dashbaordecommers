@@ -112,6 +112,7 @@ export default function ProductsPage() {
           required: true,
           placeholder: 'Enter product name'
         },
+        
         { 
           name: 'slug', 
           label: 'Slug', 
@@ -256,6 +257,14 @@ export default function ProductsPage() {
           placeholder: 'Enter mix gun'
         },
         { 
+  name: 'image', 
+  label: 'Main Image (Dummy)', 
+  type: 'file', 
+  required: false,
+  // يمكنك إخفاء الحقل إذا ماكنتش عايزه يظهر
+  // hidden: true
+},
+        { 
           name: 'mix_canules', 
           label: 'Mix Canules', 
           type: 'text', 
@@ -291,17 +300,17 @@ export default function ProductsPage() {
         },
         
         // Gallery - باستخدام المكون الجديد
-        { 
-          name: 'gallery', 
-          label: 'Product Gallery', 
-          type: 'custom',
-          component: MultiImageUploader,
-          required: false,
-          props: {
-            maxFiles: 10,
-            accept: 'image/*'
-          }
-        },
+     { 
+  name: 'gallery', 
+  label: 'Product Gallery', 
+  type: 'custom',  // ✅ لازم يكون custom
+  component: MultiImageUploader,
+  required: false,
+  props: {
+    maxFiles: 10,
+    accept: 'image/*'
+  }
+},
 
         // Status
         { 
