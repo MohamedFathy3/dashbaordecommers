@@ -2,7 +2,6 @@
 
 import {
   Search,
-  Bell,
   User,
   ChevronsLeft,
   Bookmark,
@@ -33,9 +32,9 @@ export default function Navbar({
   const { user, logout } = useAuth()
 
   const favorites = [
-    { name: 'Dashboard', url: '/dashboard' },
-    { name: 'Reports', url: '/reports' },
-    { name: 'Analytics', url: '/analytics' },
+    { name: 'Dashboard', url: '/' },
+    { name: 'User', url: '/user' },
+    { name: 'Order', url: '/order' },
   ]
 
   return (
@@ -98,19 +97,6 @@ export default function Navbar({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="relative">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-yellow-600 hover:text-yellow-600 dark:hover:text-yellow-200"
-              title="Notifications"
-            >
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-0.5 right-0.5 h-4 min-w-[16px] px-1 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
-                3
-              </span>
-            </Button>
-          </div>
 
           <ThemeToggle />
 

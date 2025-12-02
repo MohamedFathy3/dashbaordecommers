@@ -12,7 +12,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
 
-  // بيانات الشركة - يمكن جلبها من environment variables أو config
   const companyInfo = {
     name: process.env.NEXT_PUBLIC_COMPANY_NAME || "jobs",
     website: process.env.NEXT_PUBLIC_COMPANY_WEBSITE || "/",

@@ -3,7 +3,7 @@
 import { 
   Home, Database, Computer, Ship,
   ChevronDown, ChevronRight, LucideIcon,
-  Clock, Package, Megaphone
+  Clock, Package, Megaphone,User
 } from "lucide-react"
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
@@ -30,8 +30,9 @@ const navItems: NavItem[] = [
   { name: 'Dashboard', icon: Home, href: '/' },
   { name: 'orders', icon: Clock, href: '/orders' },
   { name: 'category', icon: Computer, href: '/category' },
+  { name: 'User', icon: User, href: '/user' },
   { name: 'Product', icon: Package, href: '/Product' },
-{ name: 'Shipping', icon: Ship, href: '/shippeng' },
+  { name: 'Shipping', icon: Ship, href: '/shippeng' },
   { name: 'offer', icon: Database, href: '/offer' },
   { name: 'conectUs', icon: Megaphone, href: '/conectUs' },
 ]
@@ -116,85 +117,17 @@ export default function Sidebar({
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
             {!collapsed ? (
               <div className="flex items-center gap-3">
-                {/* Logo Image */}
-                <div className="w-10 h-10 flex items-center justify-center">
-                  {isDarkMode ? (
-                    // صورة الوضع الداكن - بدون خلفية
-                    <img 
-                      src="/logo.png" 
-                      alt="App Logo"
-                      className="w-13 h-13 object-contain"
-                      onError={(e) => {
-                        // Fallback إذا الصورة مش موجودة
-                        e.currentTarget.style.display = 'none'
-                        const fallback = document.getElementById('logo-fallback')
-                        if (fallback) fallback.style.display = 'flex'
-                      }}
-                    />
-                  ) : (
-                    // صورة الوضع الفاتح - بخلفية
-                    <img 
-                      src="/logo.png" 
-                      alt="App Logo"
-                      className="w-13 h-13 object-contain"
-                      onError={(e) => {
-                        // Fallback إذا الصورة مش موجودة
-                        e.currentTarget.style.display = 'none'
-                        const fallback = document.getElementById('logo-fallback')
-                        if (fallback) fallback.style.display = 'flex'
-                      }}
-                    />
-                  )}
-                  
-                  {/* Fallback إذا الصور مش موجودة */}
-                  <div 
-                    id="logo-fallback"
-                    className="w-13 h-13 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm hidden"
-                  >
-                    E
-                  </div>
+                {/* Logo - نص فقط */}
+                <div className="w-full flex items-center justify-center">
+                  <h2 className="text-3xl font-extrabold bg-gradient-to-r from-red-600 via-orange-500 to-yellow-400 bg-clip-text text-transparent">
+                    IAM
+                  </h2>
                 </div>
-               <h2 className="text-3xl font-extrabold bg-gradient-to-r from-red-600 via-orange-500 to-yellow-400 bg-clip-text text-transparent">
-  forma
-</h2>
-
               </div>
             ) : (
               // Logo عندما الـ sidebar collapsed
-              <div className="w-13 h-13 flex items-center justify-center">
-                 {isDarkMode ? (
-                    // صورة الوضع الداكن - بدون خلفية
-                    <img 
-                      src="/logo.png" 
-                      alt="App Logo"
-                      className="w-13 h-13 object-contain"
-                      onError={(e) => {
-                        // Fallback إذا الصورة مش موجودة
-                        e.currentTarget.style.display = 'none'
-                        const fallback = document.getElementById('logo-fallback')
-                        if (fallback) fallback.style.display = 'flex'
-                      }}
-                    />
-                  ) : (
-                    // صورة الوضع الفاتح - بخلفية
-                    <img 
-                      src="/logo.png" 
-                      alt="App Logo"
-                      className="w-13 h-13 object-contain"
-                      onError={(e) => {
-                        // Fallback إذا الصورة مش موجودة
-                        e.currentTarget.style.display = 'none'
-                        const fallback = document.getElementById('logo-fallback')
-                        if (fallback) fallback.style.display = 'flex'
-                      }}
-                    />
-                  )}
-                
-                {/* Fallback عندما الـ sidebar collapsed */}
-                <div 
-                  id="logo-collapsed-fallback"
-                  className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs hidden"
-                >
+              <div className="w-full flex items-center justify-center">
+                <div className="text-lg font-extrabold bg-gradient-to-r from-red-600 via-orange-500 to-yellow-400 bg-clip-text text-transparent">
                   E
                 </div>
               </div>
