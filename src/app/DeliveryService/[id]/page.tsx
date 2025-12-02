@@ -18,7 +18,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import OrderStatusUpdate from '@/components/orders/OrderStatusUpdate'
 
 interface OrderDetailsPageProps {
   params: {
@@ -235,7 +234,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
               </div>
 
               {/* Status Update Component */}
-              <OrderStatusUpdate orderId={order.id} currentStatus={order.status} />
+              {/* <OrderStatusUpdate orderId={order.id} currentStatus={order.status} /> */}
             </div>
 
             {/* Payment Information */}
