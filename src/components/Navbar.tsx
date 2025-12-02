@@ -111,13 +111,13 @@ export default function Navbar({
                   )}
                 </div>
                 <span className="hidden md:inline-block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {user?.name ?? 'Guest'}
+                  {user?.name ?? 'Admin'}
                 </span>
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end">
               <div className="px-2 py-1.5">
-                <p className="text-sm font-semibold">{user?.name ?? 'Guest'}</p>
+                <p className="text-sm font-semibold">{user?.name ?? 'Admin'}</p>
                 <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{user?.email ?? ''}</p>
               </div>
               <DropdownMenuSeparator />
