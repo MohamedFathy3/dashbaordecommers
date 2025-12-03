@@ -450,6 +450,7 @@ export function useGenericDataManager({
   };
 
 
+// hooks/useGenericDataManager.ts - الجزء اللي محتاج تعديل
 const handleSave = async (e: SaveOptions): Promise<void> => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let itemData: Record<string, any> = {};
@@ -471,14 +472,14 @@ const handleSave = async (e: SaveOptions): Promise<void> => {
 
   console.log('📸 Form data before processing:', itemData);
 
-  // Check for files
+  // ✅ Check for files
   hasFiles = Object.values(itemData).some(v => 
     v instanceof File || 
     (v && typeof v === 'object' && Array.isArray(v)) ||
     (v && typeof v === 'object' && 'new' in v && Array.isArray(v.new))
   );
 
-  const excludedKeys = ['active', 'createdAt', 'updatedAt', '_method'];
+  const excludedKeys = ['createdAt', 'updatedAt', '_method'];
   Object.keys(itemData).forEach((key) => {
     if (excludedKeys.includes(key)) {
       delete itemData[key];
@@ -489,87 +490,191 @@ const handleSave = async (e: SaveOptions): Promise<void> => {
   let isFormData = false;
   const isEditMode = !!editingItem?.id;
 
-  if (hasFiles || isEditMode) { // ✅ تغيير مهم: استخدم isEditMode حتى لو لا يوجد ملفات
+  console.log('🔄 Is Edit Mode:', isEditMode);
+  console.log('📁 Has Files:', hasFiles);
+  console.log('🎯 Should use FormData:', hasFiles || isEditMode);
+
+  if (hasFiles || isEditMode) {
     const formDataObj = new FormData();
     
+    console.log('🔍 Processing fields for FormData:');
+    
     Object.entries(itemData).forEach(([key, value]) => {
-      // ✅ الإصلاح: التعامل مع image في وضع التعديل
+      console.log(`  Field [${key}]:`, value, `Type:`, typeof value);
+      
+      // ✅ الحل: معالجة جميع أنواع البيانات بشكل صحيح
+      if (value === null || value === undefined || value === '') {
+        console.log(`  ⏭️ Skipping empty/null field [${key}]`);
+        return;
+      }
+      
+      // 1. Boolean values - إرسالها كـ "1" أو "0"
+      if (typeof value === 'boolean') {
+        console.log(`  🔘 Boolean field [${key}]:`, value);
+        formDataObj.append(key, value ? '1' : '0');
+        return;
+      }
+      
+      // 2. Switch fields قد تأتي كـ string "true" أو "false" من الـ component
+      if (typeof value === 'string' && (value === 'true' || value === 'false')) {
+        console.log(`  🔘 Switch field as string [${key}]:`, value);
+        formDataObj.append(key, value === 'true' ? '1' : '0');
+        return;
+      }
+      
+      // 3. Images - معالجة خاصة
       if (key === 'image') {
-        console.log('🖼️ Processing image field:', value);
+        console.log(`  🖼️ Image field [${key}]:`, value);
         
         if (value instanceof File) {
-          // الحالة 1: ملف جديد
-          console.log(`📄 Adding new image file:`, value.name);
+          console.log(`    📄 Adding new image file:`, value.name);
           formDataObj.append('image', value);
         } else if (isEditMode && typeof value === 'string' && value.startsWith('http')) {
-          // الحالة 2: في التعديل والصورة موجودة كـ URL
-          console.log('🔗 EDIT MODE - Image is URL, sending as empty to preserve existing image');
-          formDataObj.append('image', ''); // ✅ أرسل قيمة فارغة
-        } else if (!value || value === '') {
-          // الحالة 3: صورة فارغة
-          console.log('🔄 Image is empty, sending empty string');
+          // في وضع التعديل والصورة موجودة كـ URL، أرسل string فارغ
+          console.log('    🔗 EDIT MODE - Image is URL, sending empty to preserve');
+          formDataObj.append('image', '');
+        } else if (value === '') {
+          console.log('    🗑️ Image is empty string');
           formDataObj.append('image', '');
         }
-        
-      } else if (key === 'gallery') {
-        console.log('🖼️ Processing gallery field:', value);
+        return;
+      }
+      
+      // 4. Gallery - معالجة خاصة
+      if (key === 'gallery') {
+        console.log(`  🖼️ Gallery field [${key}]:`, value);
         
         if (value && typeof value === 'object') {
-          const galleryValue = value as { existing: string[]; new: File[] };
-          
-          let allGalleryFiles: File[] = [];
-          
-          if (Array.isArray(value)) {
-            allGalleryFiles = value.filter(item => item instanceof File);
-          } else if (value && typeof value === 'object' && 'new' in value) {
+          // حالة Gallery object
+          if ('new' in value && Array.isArray(value.new)) {
             const galleryValue = value as { existing: string[]; new: File[] };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            allGalleryFiles = galleryValue.new.filter((item: any) => item instanceof File);
-            console.log('🔵 EDIT MODE - Sending only new gallery files:', allGalleryFiles.length);
+            console.log(`    📁 Gallery has ${galleryValue.new.length} new files`);
+            
+            galleryValue.new.forEach((file: File, index: number) => {
+              if (file instanceof File) {
+                console.log(`      📄 Adding gallery file [${index}]:`, file.name);
+                formDataObj.append(`gallery[${index}]`, file);
+              }
+            });
+          } 
+          // حالة Array مباشرة
+          else if (Array.isArray(value)) {
+            console.log(`    📁 Gallery as array with ${value.length} items`);
+            value.forEach((item, index) => {
+              if (item instanceof File) {
+                console.log(`      📄 Adding gallery file [${index}]:`, item.name);
+                formDataObj.append(`gallery[${index}]`, item);
+              }
+            });
           }
-          
-          allGalleryFiles.forEach((file: File, index: number) => {
-            console.log(`📁 Adding gallery file [${index}]:`, file.name);
-            formDataObj.append(`gallery[${index}]`, file);
-          });
         }
-        
-      } else if (value instanceof File) {
-        console.log(`📄 Adding file ${key}:`, value.name);
+        return;
+      }
+      
+      // 5. Files
+      if (value instanceof File) {
+        console.log(`  📄 File field [${key}]:`, value.name);
         formDataObj.append(key, value);
-      } else if (value !== null && value !== undefined && value !== '') {
+        return;
+      }
+      
+      // 6. Arrays (عامة)
+      if (Array.isArray(value)) {
+        console.log(`  📋 Array field [${key}] with ${value.length} items`);
+        value.forEach((item, index) => {
+          if (item instanceof File) {
+            formDataObj.append(`${key}[${index}]`, item);
+          } else if (item !== null && item !== undefined) {
+            formDataObj.append(`${key}[${index}]`, String(item));
+          }
+        });
+        return;
+      }
+      
+      // 7. Numbers - إرسالها كـ string
+      if (typeof value === 'number') {
+        console.log(`  🔢 Number field [${key}]:`, value);
         formDataObj.append(key, String(value));
+        return;
+      }
+      
+      // 8. Strings والعادي
+      console.log(`  📝 String/other field [${key}]:`, value);
+      formDataObj.append(key, String(value));
+    });
+    
+    // ✅ إضافة active لو مش موجودة (خاصة في وضع التعديل)
+    if (!formDataObj.has('active') && 'active' in itemData) {
+      const activeValue = itemData.active;
+      console.log('⚠️ active field missing in FormData, adding:', activeValue);
+      if (typeof activeValue === 'boolean') {
+        formDataObj.append('active', activeValue ? '1' : '0');
+      } else if (activeValue === 'true' || activeValue === true) {
+        formDataObj.append('active', '1');
+      } else {
+        formDataObj.append('active', '0');
+      }
+    }
+    
+    const switchFields = ['free_delevery', 'one_year_warranty'];
+    switchFields.forEach(field => {
+      if (!formDataObj.has(field) && field in itemData) {
+        const fieldValue = itemData[field];
+        console.log(`⚠️ ${field} field missing in FormData, adding:`, fieldValue);
+        if (typeof fieldValue === 'boolean') {
+          formDataObj.append(field, fieldValue ? '1' : '0');
+        } else if (fieldValue === 'true' || fieldValue === true) {
+          formDataObj.append(field, '1');
+        } else {
+          formDataObj.append(field, '0');
+        }
       }
     });
     
-    // ✅ تأكد من إضافة image إذا كانت مفقودة في التعديل
-    if (isEditMode && !formDataObj.has('image')) {
-      console.log('⚠️ EDIT MODE - No image field found, adding empty image');
-      formDataObj.append('image', '');
-    }
-    
-    // إضافة _method إذا كان تعديل
+    // ✅ إضافة _method إذا كان تعديل
     if (isEditMode) {
-      formDataObj.append('_method', 'PUT');
       console.log('✏️ EDIT MODE - Added _method: PUT');
+      formDataObj.append('_method', 'PUT');
     }
     
-    // Log FormData للتأكد
-    console.log('📤 FormData entries:');
+    // ✅ Log FormData للتأكد من كل الحقول
+    console.log('📤 Final FormData entries:');
     for (const entry of formDataObj.entries()) {
-      console.log('  ', entry[0], ':', entry[1] instanceof File ? `File: ${entry[1].name}` : entry[1]);
+      const [key, val] = entry;
+      if (val instanceof File) {
+        console.log(`  ${key}: File - ${val.name} (${val.type}, ${val.size} bytes)`);
+      } else {
+        console.log(`  ${key}: ${val}`);
+      }
     }
     
     dataToSend = formDataObj;
     isFormData = true;
   } else {
-    // معالجة البيانات بدون ملفات (لـ Add فقط)
+    // ✅ معالجة البيانات بدون FormData (لـ Add فقط بدون ملفات)
+    console.log('📤 Using JSON (no FormData)');
+    
     const clean: Record<string, unknown> = {};
     Object.entries(itemData).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
+      if (value === null || value === undefined || value === '') {
+        return;
+      }
+      
+      // ✅ معالجة Boolean للـ JSON
+      if (typeof value === 'boolean') {
+        clean[key] = value;
+      } 
+      // ✅ معالجة switch fields كـ strings
+      else if (typeof value === 'string' && (value === 'true' || value === 'false')) {
+        clean[key] = value === 'true';
+      }
+      else {
         clean[key] = value;
       }
+      
+      console.log(`  ${key}:`, clean[key], `(type: ${typeof clean[key]})`);
     });
+    
     dataToSend = clean as Entity;
   }
 

@@ -2,6 +2,7 @@
 'use client';
 import GenericDataManager from "@/components/Tablecomponents/GenericDataManager";
 import { useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query"; // ✅ إضافة
 
 // تعريف نوع البيانات
 interface Order {
@@ -18,21 +19,15 @@ interface Order {
 }
 
 export default function OrdersPage() {
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [ordersData, setOrdersData] = useState<Order[]>([]);
+  // لم نعد بحاجة لهم، يمكن حذفهم أو تركهم لو مش عاملين تحذير
+  // const [refreshKey, setRefreshKey] = useState(0);
+  // const [ordersData, setOrdersData] = useState<Order[]>([]);
 
-  // دالة لتحديث حالة الطلب في الـ UI فوراً
+  const queryClient = useQueryClient(); // ✅ نستخدمه لعمل refetch بعد التغيير
+
+  // دالة لتحديث حالة الطلب في الـ UI فوراً (اختياري تسيبها أو تحذفها)
   const updateOrderStatusInUI = useCallback((orderId: number, newStatus: string) => {
-    setOrdersData(prevOrders => 
-      prevOrders.map(order => 
-        order.id === orderId 
-          ? { ...order, status: newStatus }
-          : order
-      )
-    );
-    
-    // تحديث الجدول أيضاً
-    setRefreshKey(prev => prev + 1);
+    // هنا لو عايز تعمل Optimistic UI على state محلي
   }, []);
 
   const handleStatusChange = async (orderId: number, currentStatus: string) => {
@@ -47,32 +42,29 @@ export default function OrdersPage() {
       ];
 
       const selectedStatus = await showStatusModal(statusOptions, currentStatus);
-      
       if (!selectedStatus) return;
 
-      // تحديث الـ UI فوراً قبل إرسال الطلب
+      // (اختياري) تحديث UI محلي
       updateOrderStatusInUI(orderId, selectedStatus);
 
-      // إرسال طلب تغيير الحالة
       const response = await fetch(`/api/proxy/orders/change-status/${orderId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          status: selectedStatus
-        })
+        body: JSON.stringify({ status: selectedStatus })
       });
 
       if (!response.ok) {
-        // إذا فشل الطلب، نرجع الحالة كما كانت
+        // رجّع الحالة القديمة لو فشل
         updateOrderStatusInUI(orderId, currentStatus);
         throw new Error('Failed to update status');
       }
 
-      // نجاح - نعرض رسالة نجاح
+      // ✅ بعد النجاح: اعمل ريفتش من السيرفر فوراً
+      await queryClient.invalidateQueries({ queryKey: ['orders'] });
+
       showSuccessMessage(`Order status updated to ${selectedStatus}`);
-      
     } catch (error) {
       console.error('Error changing order status:', error);
       alert('Failed to change order status');
@@ -81,12 +73,12 @@ export default function OrdersPage() {
 
   // دالة لمعالجة بيانات الـ orders عند جلبها
   const handleOrdersDataLoaded = useCallback((data: Order[]) => {
-    setOrdersData(data);
+    // setOrdersData(data); // لم نعد بحاجة لهذا الـ state
   }, []);
 
   return (
     <GenericDataManager
-      key={refreshKey}
+      // key={refreshKey} // لم نعد نحتاجه لو بنستخدم invalidateQueries
       endpoint="orders"
       title="Orders"
       columns={[
@@ -110,7 +102,12 @@ export default function OrdersPage() {
           key: 'status', 
           label: 'Order Status', 
           sortable: true,
-         
+          render: (item) => (
+            <OrderStatusCell 
+              item={item as Order} 
+              onStatusChange={handleStatusChange} 
+            />
+          ),
         },
         { 
           key: 'payment_method', 
@@ -153,94 +150,7 @@ export default function OrdersPage() {
        
       ]}
       
-      // ⭐⭐⭐ حقول التعديل ⭐⭐⭐
-      formFields={[
-        { 
-          name: 'email', 
-          label: 'Email', 
-          type: 'email', 
-          required: true,
-          placeholder: 'Enter customer email'
-        },
-        { 
-          name: 'phone', 
-          label: 'Phone', 
-          type: 'tel', 
-          required: true,
-          placeholder: 'Enter customer phone number'
-        },
-        { 
-          name: 'address_line', 
-          label: 'Address', 
-          type: 'text', 
-          required: true,
-          placeholder: 'Enter street address'
-        },
-        { 
-          name: 'city', 
-          label: 'City', 
-          type: 'text', 
-          required: true,
-          placeholder: 'Enter city'
-        },
-        { 
-          name: 'state', 
-          label: 'State', 
-          type: 'text', 
-          required: true,
-          placeholder: 'Enter state/province'
-        },
-        { 
-          name: 'zip_code', 
-          label: 'ZIP Code', 
-          type: 'text', 
-          required: true,
-          placeholder: 'Enter ZIP/postal code'
-        },
-        { 
-          name: 'status', 
-          label: 'Order Status', 
-          type: 'select', 
-          required: true,
-          options: [
-            { value: 'pending', label: 'Pending' },
-            { value: 'confirmed', label: 'Confirmed' },
-            { value: 'processing', label: 'Processing' },
-            { value: 'shipped', label: 'Shipped' },
-            { value: 'delivered', label: 'Delivered' },
-            { value: 'cancelled', label: 'Cancelled' }
-          ]
-        },
-        { 
-          name: 'payment_method', 
-          label: 'Payment Method', 
-          type: 'select', 
-          required: true,
-          options: [
-            { value: 'card', label: 'Credit Card' },
-            { value: 'cash', label: 'Cash on Delivery' },
-            { value: 'bank_transfer', label: 'Bank Transfer' }
-          ]
-        },
-        { 
-          name: 'payment_status', 
-          label: 'Payment Status', 
-          type: 'select', 
-          required: true,
-          options: [
-            { value: '0', label: 'Unpaid' },
-            { value: '1', label: 'Paid' },
-            { value: '2', label: 'Refunded' }
-          ]
-        },
-        { 
-          name: 'promo_code', 
-          label: 'Promo Code', 
-          type: 'text', 
-          required: false,
-          placeholder: 'Enter promo code (optional)'
-        },
-      ]}
+     
 
       showAddButton={false}
       showEditButton={false}

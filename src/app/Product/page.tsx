@@ -9,12 +9,12 @@ export default function ProductsPage() {
       endpoint="card"
       title="Products"
       columns={[
-        { 
-          key: 'id', 
-          label: 'ID', 
-          sortable: true,
-          render: (item) => `PR${String(item.id).padStart(3, '0')}`
-        },
+        // { 
+        //   key: 'id', 
+        //   label: 'ID', 
+        //   sortable: true,
+        //   render: (item) => `PR${String(item.id).padStart(3, '0')}`
+        // },
         { 
           key: 'name', 
           label: 'Product Name', 
@@ -38,52 +38,52 @@ export default function ProductsPage() {
           sortable: true,
           render: (item) => `${item.currency || 'EGP'} ${item.old_price}`
         },
-        { 
-          key: 'quantity', 
-          label: 'Quantity', 
-          sortable: true,
-          render: (item) => item.quantity || 0
-        },
-        { 
-          key: 'category', 
-          label: 'Category', 
-          sortable: true 
-        },
+        // { 
+        //   key: 'quantity', 
+        //   label: 'Quantity', 
+        //   sortable: true,
+        //   render: (item) => item.quantity || 0
+        // },
+        // { 
+        //   key: 'category', 
+        //   label: 'Category', 
+        //   sortable: true 
+        // },
         // Gallery preview column - محسنة
-        { 
-          key: 'gallery', 
-          label: 'Gallery', 
-          sortable: false,
-          render: (item) => {
-            const gallery = item.gallery || [];
-            if (gallery.length === 0) {
-              return (
-                <span className="text-gray-400 text-sm">No images</span>
-              );
-            }
+        // { 
+        //   key: 'gallery', 
+        //   label: 'Gallery', 
+        //   sortable: false,
+        //   render: (item) => {
+        //     const gallery = item.gallery || [];
+        //     if (gallery.length === 0) {
+        //       return (
+        //         <span className="text-gray-400 text-sm">No images</span>
+        //       );
+        //     }
             
-            return (
-              <div className="flex items-center gap-2">
-                <div className="flex -space-x-2">
-                  {gallery.slice(0, 3).map((img: string, index: number) => (
-                    <img 
-                      key={index}
-                      src={img} 
-                      alt={`Gallery ${index + 1}`}
-                      className="w-8 h-8 object-cover rounded border-2 border-white shadow-sm"
-                    />
-                  ))}
-                  {gallery.length > 3 && (
-                    <div className="w-8 h-8 bg-gray-200 rounded border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
-                      +{gallery.length - 3}
-                    </div>
-                  )}
-                </div>
-                <span className="text-xs text-gray-500">{gallery.length} images</span>
-              </div>
-            );
-          }
-        },
+        //     return (
+        //       <div className="flex items-center gap-2">
+        //         <div className="flex -space-x-2">
+        //           {gallery.slice(0, 3).map((img: string, index: number) => (
+        //             <img 
+        //               key={index}
+        //               src={img} 
+        //               alt={`Gallery ${index + 1}`}
+        //               className="w-8 h-8 object-cover rounded border-2 border-white shadow-sm"
+        //             />
+        //           ))}
+        //           {gallery.length > 3 && (
+        //             <div className="w-8 h-8 bg-gray-200 rounded border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
+        //               +{gallery.length - 3}
+        //             </div>
+        //           )}
+        //         </div>
+        //         <span className="text-xs text-gray-500">{gallery.length} images</span>
+        //       </div>
+        //     );
+        //   }
+        // },
         { 
           key: 'active', 
           label: 'Status', 
@@ -311,7 +311,19 @@ export default function ProductsPage() {
           label: 'Status', 
           type: 'switch', 
           required: false,
-        }
+        },
+        { 
+          name: 'free_delevery', 
+          label: 'free_delivery', 
+          type: 'switch', 
+          required: false,
+        },
+        { 
+          name: 'one_year_warranty', 
+          label: 'one_year_warranty', 
+          type: 'switch', 
+          required: false,
+        },
       ]}
 
       showAddButton={true}
@@ -342,7 +354,8 @@ export default function ProductsPage() {
             { value: 'true', label: 'Active' },
             { value: 'false', label: 'Inactive' }
           ]
-        }
+        },
+       
       ]}
     />
   );

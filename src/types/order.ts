@@ -55,7 +55,7 @@ export interface Order {
   address_line: string;
   city: string;
   state: string;
-  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'done';
+  status: 'pending' | 'in_progress' | 'delivering' | 'delivered' | 'cancelled' | 'confirmed' | 'shipped' | 'done';
   zip_code: string;
   payment_method: string;
   payment_status: string;
@@ -68,6 +68,19 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  created_at: string;
+
+  delivery_address: string;
+  delivery_city: string;
+  delivery_state: string;
+  delivery_zip_code: string;
+  delivery_promo_code: string | null;
+  delivery_payment_method: string;
+  delivery_payment_status: string;
+  delivery_payment_type: 'cash' | 'installment';
 }
 
 export interface OrdersResponse {
@@ -98,5 +111,4 @@ export interface OrdersResponse {
 }
 
 export interface OrderStatusUpdate {
-  status: 'pending' | 'confirmed' | 'cancelled' | 'done';
-}
+  status: 'pending' | 'in_progress' | 'delivering' | 'delivered' | 'cancelled' | 'confirmed' | 'shipped' | 'done'}

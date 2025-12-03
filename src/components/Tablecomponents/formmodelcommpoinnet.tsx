@@ -36,6 +36,7 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
   console.log('🔍 FormFieldComponent - field:', field);
   console.log('🔍 FormFieldComponent - value:', value);
   console.log('🔍 FormFieldComponent - isEditing:', isEditing);
+  console.log('🔍 FormFieldComponent - field.type:', field.type);
 
   // ✅ نقل useMemo واحد فقط إلى أعلى المكون
   const normalizedValue = useMemo(() => {
@@ -64,6 +65,64 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
   }, [value]);
 
   console.log('🎯 NORMALIZED VALUE FOR ALL FIELDS:', normalizedValue);
+
+  // ✅ ✅ ✅ الإصلاح الرئيسي: معالجة الـ Switch بشكل منفصل
+  if (field.type === "switch") {
+    console.log('🎯 SWITCH FIELD DETECTED!', field.name, 'value:', value);
+    
+    // ✅ تحويل القيمة لـ boolean
+   
+    const getBooleanValue = (val: unknown): boolean => {
+      console.log(`🔄 Converting switch value for ${field.name}:`, val);
+      
+      if (typeof val === 'boolean') {
+        return val;
+      }
+      if (typeof val === 'string') {
+        return val === 'true' || val === '1' || val === 'on';
+      }
+      if (typeof val === 'number') {
+        return val === 1;
+      }
+      return false;
+    };
+    
+    const switchValue = getBooleanValue(value);
+    console.log(`🔘 Switch [${field.name}] boolean value:`, switchValue);
+    
+    const handleSwitchChange = (newChecked: boolean) => {
+      console.log(`🔘 Switch [${field.name}] changed to:`, newChecked);
+      
+      // ✅ الإصلاح: إرسال القيمة كـ boolean مباشرة
+      // لكن نحتاج التأكد من أن الـ onChange يستقبل boolean وليس string
+      onChange(newChecked);
+    };
+
+    return (
+      <div className={`flex items-center justify-between space-x-4 ${compact ? 'col-span-1' : 'col-span-1'} p-3 rounded-lg bg-gray-50 dark:bg-gray-800`}>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            {field.label}
+            {field.required && <span className="text-red-500 ml-1">*</span>}
+          </label>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Current: {switchValue ? 'ON ✓' : 'OFF ✗'} 
+            <span className="ml-2">({typeof value} = {String(value)})</span>
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Switch 
+            checked={switchValue} 
+            onChange={handleSwitchChange} 
+            disabled={!isEditing}
+          />
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+            {switchValue ? 'Enabled' : 'Disabled'}
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   // ✅ معالجة حقل التحديد (select)
   if (field.type === "select") {
@@ -106,41 +165,40 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
   }
 
   // ✅ معالجة MultiImageUploader - الإصلاح الكامل
-// الإصلاح في FormFieldComponent
-if (field.type === "custom" && field.component === MultiImageUploader) {
-  console.log('🎯 MULTI IMAGE UPLOADER FIELD TRIGGERED!', field);
-  
-  const handleGalleryChange = (newValue: { existing: string[]; new: File[] }) => {
-    console.log('🔄 Gallery changed - FULL VALUE:', newValue);
+  if (field.type === "custom" && field.component === MultiImageUploader) {
+    console.log('🎯 MULTI IMAGE UPLOADER FIELD TRIGGERED!', field);
     
-    // ✅ الإصلاح: إرسال القيمة الكاملة وليس فقط الملفات الجديدة
-    if (isEditing) {
-      console.log('✏️ EDIT MODE - Sending full gallery value');
-      onChange(newValue); // إرسال الكائن الكامل
-    } else {
-      console.log('🆕 ADD MODE - Sending full gallery value');
-      onChange(newValue); // إرسال الكائن الكامل
-    }
-  };
+    const handleGalleryChange = (newValue: { existing: string[]; new: File[] }) => {
+      console.log('🔄 Gallery changed - FULL VALUE:', newValue);
+      
+      // ✅ الإصلاح: إرسال القيمة الكاملة وليس فقط الملفات الجديدة
+      if (isEditing) {
+        console.log('✏️ EDIT MODE - Sending full gallery value');
+        onChange(newValue); // إرسال الكائن الكامل
+      } else {
+        console.log('🆕 ADD MODE - Sending full gallery value');
+        onChange(newValue); // إرسال الكائن الكامل
+      }
+    };
 
-  return (
-    <div className={`space-y-2 ${compact ? 'col-span-2' : 'col-span-1'}`}>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        {field.label}
-        {field.required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      <MultiImageUploader
-        value={normalizedValue}
-        onChange={handleGalleryChange}
-        label={field.label}
-        required={field.required}
-        accept={field.props?.accept || "image/jpeg, image/png, image/jpg, image/gif, image/webp"}
-        maxFiles={field.props?.maxFiles || 10}
-        compact={compact}
-      />
-    </div>
-  );
-}
+    return (
+      <div className={`space-y-2 ${compact ? 'col-span-2' : 'col-span-1'}`}>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          {field.label}
+          {field.required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+        <MultiImageUploader
+          value={normalizedValue}
+          onChange={handleGalleryChange}
+          label={field.label}
+          required={field.required}
+          accept={field.props?.accept || "image/jpeg, image/png, image/jpg, image/gif, image/webp"}
+          maxFiles={field.props?.maxFiles || 10}
+          compact={compact}
+        />
+      </div>
+    );
+  }
 
   // ✅ معالجة ImageUploader
   if (field.type === "custom" && field.component === ImageUploader) {
@@ -331,18 +389,6 @@ if (field.type === "custom" && field.component === MultiImageUploader) {
             </p>
           </div>
         )}
-      </div>
-    );
-  }
-
-  // ✅ معالجة الـ Switch
-  if (field.type === "switch") {
-    return (
-      <div className={`flex items-center justify-between ${compact ? 'col-span-1' : 'col-span-1'}`}>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          {field.label}
-        </label>
-        <Switch checked={!!value} onChange={onChange} />
       </div>
     );
   }

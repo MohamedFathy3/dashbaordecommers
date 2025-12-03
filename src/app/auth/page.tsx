@@ -11,6 +11,13 @@ const FiLock = dynamic(() => import('react-icons/fi').then(mod => mod.FiLock))
 const FiUser = dynamic(() => import('react-icons/fi').then(mod => mod.FiUser))
 const FiArrowRight = dynamic(() => import('react-icons/fi').then(mod => mod.FiArrowRight))
 
+// هيلبر جوّه الملف
+const getCookie = (name: string): string | null => {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
 export default function AuthPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -29,9 +36,18 @@ export default function AuthPage() {
       const success = await login({ email, password })
 
       if (success) {
-        // تسجيل الدخول ناجح - التوجيه المباشر إلى الصفحة الرئيسية
+        // ✅ نقرأ النوع / الدور من الـ cookies
+        const userType = getCookie('user_type')
+        const userRole = getCookie('user_role')
+
         toast.success('Login successful!')
-        router.push('/')
+
+        // ✅ لو دليفري -> روح لصفحة /delivery (بتستخدم endpoint "man-delivery")
+        if (userType === 'delivery' || userRole === 'delivery') {
+          router.push('/delivery')
+        } else {
+          router.push('/')
+        }
       } else {
         toast.error('Login failed. Please check your credentials.')
         setError('Login failed. Please check your credentials.')
