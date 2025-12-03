@@ -384,9 +384,9 @@ export default function DeliveryServicePage() {
             </p>
           </div>
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Promo Code</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">city </p>
             <p className="text-gray-900 dark:text-white">
-              {order.promo_code || 'N/A'}
+              {order.city || 'N/A'}
             </p>
           </div>
           <div>
@@ -396,9 +396,21 @@ export default function DeliveryServicePage() {
             </p>
           </div>
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Installment</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">State</p>
             <p className="text-gray-900 dark:text-white">
-              {order.installment_months ? `${order.installment_months} months` : 'N/A'}
+              {order.state  || 'N/A'}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Phone</p>
+            <p className="text-gray-900 dark:text-white">
+              {order.phone  || 'N/A'}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">zip_code</p>
+            <p className="text-gray-900 dark:text-white">
+              {order.zip_code  || 'N/A'}
             </p>
           </div>
         </div>
@@ -464,12 +476,7 @@ export default function DeliveryServicePage() {
                 >
                   Close
                 </button>
-                <button
-                  onClick={() => openOrderDetailsModal(selectedOrderDetails)}
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
-                >
-                  Full Details
-                </button>
+               
               </div>
             </div>
           </div>
@@ -549,72 +556,7 @@ export default function DeliveryServicePage() {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Orders</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                    {stats.totalOrders.toLocaleString()}
-                  </p>
-                </div>
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl">
-                  <ShoppingBag className="h-8 w-8" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending</p>
-                  <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mt-2">
-                    {stats.pendingOrders.toLocaleString()}
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Needs attention
-                  </p>
-                </div>
-                <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-xl">
-                  <Clock className="h-8 w-8" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Revenue</p>
-                  <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">
-                    ${stats.revenue.toFixed(2)}
-                  </p>
-                  <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                    Total revenue
-                  </p>
-                </div>
-                <div className="p-4 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl">
-                  <DollarSign className="h-8 w-8" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg. Order</p>
-                  <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">
-                    ${stats.averageOrder.toFixed(2)}
-                  </p>
-                  <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">
-                    Average value
-                  </p>
-                </div>
-                <div className="p-4 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-xl">
-                  <CreditCard className="h-8 w-8" />
-                </div>
-              </div>
-            </div>
-          </div>
+        
         </div>
 
         {/* Error Display */}
