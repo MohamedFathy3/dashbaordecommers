@@ -59,7 +59,22 @@ const FormModal: React.FC<FormModalProps> = ({
           processedData[field.name] = '';
           return;
         }
-        
+          if (editingItem.brand_id) {
+            processedData.brand_id = editingItem.brand_id;
+          } else if (editingItem.brand && editingItem.brand.id) {
+            processedData.brand_id = editingItem.brand.id;
+          } else if (editingItem.brand && typeof editingItem.brand === 'number') {
+            processedData.brand_id = editingItem.brand;
+          } else if (editingItem.brand && typeof editingItem.brand === 'string') {
+            const brands = additionalQueries?.Brand?.data || [];
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const foundBrand = brands.find((b: any) => 
+              b.name === editingItem.brand || b.id.toString() === editingItem.brand
+            );
+            if (foundBrand) {
+              processedData.brand_id = foundBrand.id;
+            }
+          }
         // ✅ إصلاح مشكلة الـ category_id
         if (field.name === 'category_id') {
           console.log('🔍 CATEGORY FIELD DEBUG:', {
@@ -72,6 +87,7 @@ const FormModal: React.FC<FormModalProps> = ({
           if (editingItem.category_id) {
             processedData.category_id = editingItem.category_id;
           } 
+          
           // الحالة 2: إذا كان category كائن به id
           else if (editingItem.category && editingItem.category.id) {
             processedData.category_id = editingItem.category.id;

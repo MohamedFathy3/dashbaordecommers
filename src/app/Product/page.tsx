@@ -157,10 +157,16 @@ export default function ProductsPage() {
           type: 'select', 
           required: false,
           options: [
-            { value: 'EGP', label: 'EGP' },
-            { value: 'USD', label: 'USD' },
-            { value: 'EUR', label: 'EUR' },
-            { value: 'GBP', label: 'GBP' }
+            { value: 'EGP', label: 'EGP' },      // جنيه
+    { value: 'SAR', label: 'SAR' },      // سعودي
+    { value: 'AED', label: 'AED' },      // إماراتي
+    { value: 'QAR', label: 'QAR' },      // قطري
+    { value: 'KWD', label: 'KWD' },      // كويتي
+    { value: 'BHD', label: 'BHD' },      // بحريني
+    { value: 'OMR', label: 'OMR' },      // عُماني
+    { value: 'USD', label: 'USD' },      // دولار
+    { value: 'EUR', label: 'EUR' },      // يورو
+    { value: 'GBP', label: 'GBP' }  
           ],
           defaultValue: 'EGP'
         },
