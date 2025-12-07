@@ -67,6 +67,8 @@ export interface Device extends Entity {
   memoryId?: number;
 }
 
+
+
 export interface GenericDataManagerProps {
   endpoint: string;
   title: string;

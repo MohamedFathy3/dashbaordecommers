@@ -8,7 +8,7 @@ export default function CategoriesPage() {
       endpoint="brands"
       title="Brand"
       columns={[
-   
+
         { 
           key: 'name', 
           label: 'Name', 
@@ -19,14 +19,12 @@ export default function CategoriesPage() {
           label: 'Slug', 
           sortable: true 
         },
-     
-        
-  { 
+
+  {
   key: 'image', 
   label: 'Image', 
   sortable: false,
   render: (item) => {
-    // تحويل الصورة لـ string
     const imageSrc = typeof item.image === 'string' 
       ? item.image 
       : item.image instanceof Blob 
@@ -48,9 +46,9 @@ export default function CategoriesPage() {
     );
   }
 },
-        { 
-          key: 'active', 
-          label: 'Status', 
+        {
+          key: 'active',
+          label: 'Status',
           sortable: true,
           render: (item) => (
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -65,30 +63,29 @@ export default function CategoriesPage() {
      
       ]}
        additionalData={[
-        { 
-          key: 'categories', 
+        {
+          key: 'categories',
           endpoint: '/categories',
         }
       ]}
      
     
       formFields={[
-        { 
+        {
           name: 'name', 
           label: 'Brand Name', 
           type: 'text', 
           required: true,
           placeholder: 'Enter Brand name'
         },
-        { 
+        {
           name: 'slug', 
           label: 'Slug', 
           type: 'text', 
           required: false,
           placeholder: 'Enter Brand slug (auto-generated if empty)'
         },
-     
-        { 
+        {
           name: 'image', 
           label: 'Brand Icon', 
           type: 'file', 
@@ -105,16 +102,14 @@ export default function CategoriesPage() {
         },
       ]}
 
-    
-      
-    
+
       showAddButton={true}
-      showEditButton={true}
+      showEditButton={false}
       showDeleteButton={true}
       showBulkActions={true}
       showDeletedToggle={true}
       
-      // ⭐⭐⭐ الفلترز المتاحة ⭐⭐⭐
+     
       availableFilters={[
        
         
@@ -131,9 +126,6 @@ export default function CategoriesPage() {
           placeholder: 'Search by slug...'
         }
       ]}
-
-  
-   
       />
   );
 }

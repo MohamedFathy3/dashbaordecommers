@@ -34,6 +34,7 @@ const navItems: NavItem[] = [
   // { name: 'Delivery', icon: Truck, href: '/delivery' },
   { name: 'Product', icon: Package, href: '/Product' },
   { name: 'Brand', icon: Package, href: '/Brand' },
+  { name: 'Brand2', icon: Package, href: '/brand2' },
   { name: 'Shipping', icon: Ship, href: '/shippeng' },
   { name: 'offer', icon: Database, href: '/offer' },
   { name: 'ContactUs', icon: Megaphone, href: '/conectUs' },
