@@ -102,6 +102,7 @@ export default function ProductsPage() {
 
       additionalData={[
         { key: 'categories', endpoint: '/categories' },
+        { key: 'Brand', endpoint: '/brands' },
       ]}
       
       formFields={[
@@ -189,7 +190,14 @@ export default function ProductsPage() {
           required: true,
           placeholder: 'Select category',
         },
-
+   {
+          name: 'brand_id',
+          label: 'Brand',
+          type: 'select',
+          optionsKey: 'brands',
+          required: true,
+          placeholder: 'Select brand',
+        },
         // Product Specifications
         { 
           name: 'type_silicone', 
