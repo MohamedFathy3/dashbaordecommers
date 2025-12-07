@@ -31,8 +31,9 @@ const navItems: NavItem[] = [
   { name: 'orders', icon: Clock, href: '/orders' },
   { name: 'category', icon: Computer, href: '/category' },
   { name: 'User', icon: User, href: '/user' },
-  { name: 'Delivery', icon: Truck, href: '/delivery' },
+  // { name: 'Delivery', icon: Truck, href: '/delivery' },
   { name: 'Product', icon: Package, href: '/Product' },
+  { name: 'Brand', icon: Package, href: '/Brand' },
   { name: 'Shipping', icon: Ship, href: '/shippeng' },
   { name: 'offer', icon: Database, href: '/offer' },
   { name: 'ContactUs', icon: Megaphone, href: '/conectUs' },
@@ -121,7 +122,7 @@ export default function Sidebar({
                 {/* Logo - نص فقط */}
                 <div className="w-full flex items-center justify-center">
                   <h2 className="text-3xl font-extrabold bg-gradient-to-r from-red-600 via-orange-500 to-yellow-400 bg-clip-text text-transparent">
-                    effreze
+                   System 
                   </h2>
                 </div>
               </div>
