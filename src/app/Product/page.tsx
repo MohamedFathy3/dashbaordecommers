@@ -102,7 +102,7 @@ export default function ProductsPage() {
 
       additionalData={[
         { key: 'categories', endpoint: '/categories' },
-        { key: 'Brand', endpoint: '/brands' },
+        { key: 'Brand', endpoint: '/brands-list' },
       ]}
       
       formFields={[
@@ -194,7 +194,7 @@ export default function ProductsPage() {
           name: 'brand_id',
           label: 'Brand',
           type: 'select',
-          optionsKey: 'brands',
+          optionsKey: 'Brand',
           required: true,
           placeholder: 'Select brand',
         },
