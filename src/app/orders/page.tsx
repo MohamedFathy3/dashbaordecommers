@@ -2,9 +2,10 @@
 'use client';
 import GenericDataManager from "@/components/Tablecomponents/GenericDataManager";
 import { useState, useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query"; // ✅ إضافة
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from 'next/navigation';
+import { Eye, } from 'lucide-react';
 
-// تعريف نوع البيانات
 interface Order {
   id: number;
   order_number: string;
@@ -29,6 +30,12 @@ export default function OrdersPage() {
   const updateOrderStatusInUI = useCallback((orderId: number, newStatus: string) => {
     // هنا لو عايز تعمل Optimistic UI على state محلي
   }, []);
+
+    const router = useRouter();
+  
+        const handleViewUser = (userId: number) => {
+      router.push(`/orders/${userId}`);
+    };
 
   const handleStatusChange = async (orderId: number, currentStatus: string) => {
     try {
@@ -147,7 +154,22 @@ export default function OrdersPage() {
             </span>
           )
         },
-       
+         {
+                key: 'actions',
+                label: 'Actions',
+                render: (item) => (
+                  <button
+                    onClick={() => handleViewUser(item.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      
+                     'bg-gray-700 hover:bg-gray-600 text-white'
+                    }`}
+                  >
+                    <Eye size={16} />
+                    View Details
+                  </button>
+                )
+              }
       ]}
       
      
@@ -157,7 +179,8 @@ export default function OrdersPage() {
       showDeleteButton={false}
       showBulkActions={false}
       showDeletedToggle={false}
-      
+      showActiveToggle= {false}
+
       availableFilters={[
         {
           key: 'order_number',
