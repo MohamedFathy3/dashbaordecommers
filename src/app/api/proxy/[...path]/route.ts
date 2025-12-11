@@ -1,7 +1,7 @@
 // src/app/api/proxy/[...path]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-const baseUrl = process.env.TARGET_API || 'https://job.professionalacademyedu.com/api';
+const baseUrl = process.env.TARGET_API || 'https://backs.professionalacademyedu.com/api';
 
 async function proxyRequest(
   method: string,
