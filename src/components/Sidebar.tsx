@@ -31,7 +31,7 @@ const navItems: NavItem[] = [
   { name: 'orders', icon: Clock, href: '/orders' },
   { name: 'category', icon: Computer, href: '/category' },
   { name: 'User', icon: User, href: '/user' },
-  { name: 'Delivery', icon: Truck, href: '/delivery' },
+  // { name: 'Delivery', icon: Truck, href: '/delivery' },
   { name: 'Product', icon: Package, href: '/Product' },
   // { name: 'Brand', icon: Package, href: '/Brand' },
   // { name: 'Brand2', icon: Package, href: '/brand2' },
